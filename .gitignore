@@ -1,0 +1,131 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Data and outputs (large files)
+valhalla_data/
+output/
+out/
+results_old/
+frames/
+maps/
+augments/
+weights/
+*.mp4
+*.avi
+
+# Keep repo assets and compare images
+!assets/*.png
+!images/*.jpg
+!images/*.png
+
+# Keep GT data files (small metadata, no imagery)
+!data/
+data/frames/
+data/maps/
+data/augments/
+
+# Prevent stray result files in repo root
+/results_*.jsonl
+/ratings.json
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Build artifacts
+*.whl
+*.tar.gz
+
+# Playwright
+playwright-report/
+test-results/
+
+# Dashboard build/runtime artifacts
+dashboard/.next/
+dashboard/node_modules/
+dashboard/undefined:/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Archived/experimental landing page variants (local only)
+docs/index_*.html
+
+# Claude Code local settings
+.claude/
+
+# CARLA simulator (binaries, output, eggs — tracked separately)
+carla/server/
+carla/output/
+carla/dist/
+carla/*.egg
+carla/*.whl
+
+# Keep dashboard API/type helpers (Python's generic "lib/" ignore would hide these)
+!dashboard/src/lib/
+!dashboard/src/lib/*.ts
+
+# Model weights (large binaries — stored on RunPod volume / local)
+models/
+
+# Model weights (large binaries — stored on RunPod volume / local)
+models/ablation-*/
+models/experiment_*/
+models/sft_*/
+.mypy_cache
+*.pyc
+.pytest_cache
+.ruff_cache

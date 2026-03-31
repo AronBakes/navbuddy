@@ -1,0 +1,918 @@
+{
+  "version": "1.0",
+  "description": "Locked 100-sample GT evaluation split. Do not modify without versioning.",
+  "total": 100,
+  "splits": {
+    "train": 70,
+    "val": 15,
+    "test": 15
+  },
+  "train": [
+    "brisbane_route0bmpfsqys_step001",
+    "brisbane_route0bmpfsqys_step002",
+    "brisbane_route0bmpfsqys_step004",
+    "brisbane_route0bmpfsqys_step006",
+    "brisbane_route0bmpfsqys_step007",
+    "brisbane_route78pq19zcm_step000",
+    "brisbane_route78pq19zcm_step001",
+    "brisbane_route78pq19zcm_step002",
+    "brisbane_route8yc1y0ymd_step001",
+    "brisbane_route8yc1y0ymd_step003",
+    "brisbane_route8yc1y0ymd_step004",
+    "brisbane_route8yc1y0ymd_step005",
+    "brisbane_route8yc1y0ymd_step007",
+    "brisbane_route8yc1y0ymd_step008",
+    "brisbane_route8yc1y0ymd_step010",
+    "brisbane_routeakmf36hrj_step001",
+    "brisbane_routeakmf36hrj_step006",
+    "brisbane_routeakmf36hrj_step007",
+    "brisbane_routebcpzcckt7_step000",
+    "brisbane_routebcpzcckt7_step001",
+    "brisbane_routebcpzcckt7_step002",
+    "brisbane_routebcpzcckt7_step003",
+    "brisbane_routebcpzcckt7_step004",
+    "brisbane_routeetc318gfw_step000",
+    "brisbane_routeetc318gfw_step001",
+    "brisbane_routeetc318gfw_step002",
+    "brisbane_routeetc318gfw_step005",
+    "brisbane_routeetc318gfw_step006",
+    "brisbane_routeg10nezmnk_step000",
+    "brisbane_routeg10nezmnk_step001",
+    "brisbane_routeg10nezmnk_step002",
+    "brisbane_routeg10nezmnk_step004",
+    "brisbane_routeha27bdq6m_step003",
+    "brisbane_routeha27bdq6m_step004",
+    "brisbane_routeha27bdq6m_step007",
+    "brisbane_routeha27bdq6m_step012",
+    "brisbane_routeha27bdq6m_step014",
+    "brisbane_routejpqz1sjwr_step007",
+    "brisbane_routensnvm5nrs_step002",
+    "brisbane_routevhjrd1bzw_step001",
+    "brisbane_routevrkx8ntb_step001",
+    "brisbane_routevrkx8ntb_step002",
+    "brisbane_routex3kg7736w_step002",
+    "brisbane_routex3kg7736w_step003",
+    "brisbane_routeys9vay54p_step000",
+    "brisbane_routeys9vay54p_step001",
+    "brisbane_routeys9vay54p_step002",
+    "canberra_route4jpbakhf7_step008",
+    "canberra_routef1dzt9bvv_step003",
+    "canberra_routepnhpb2398_step005",
+    "canberra_routeswgc57rz8_step004",
+    "canberra_routeswgc57rz8_step006",
+    "canberra_routetc11kqgn1_step002",
+    "canberra_routetrhpa3ev6_step009",
+    "canberra_routewnjn7csh5_step001",
+    "canberra_routewnjn7csh5_step003",
+    "canberra_routewnjn7csh5_step004",
+    "canberra_routewnjn7csh5_step005",
+    "melbourne_routes0madsybw_step000",
+    "melbourne_routew6t8nhhtd_step004",
+    "sydney_route0w4gczwjs_step000",
+    "sydney_route0w4gczwjs_step001",
+    "sydney_route0w4gczwjs_step007",
+    "sydney_routeaz49p6fx9_step004",
+    "sydney_routerp75re40e_step001",
+    "sydney_routerp75re40e_step002",
+    "sydney_routerp75re40e_step007",
+    "sydney_routerp75re40e_step008",
+    "sydney_routevrjwn8bbx_step000",
+    "sydney_routexs00ryrks_step000"
+  ],
+  "val": [
+    "brisbane_route0bmpfsqys_step005",
+    "brisbane_route8yc1y0ymd_step006",
+    "brisbane_routeakmf36hrj_step003",
+    "brisbane_routeg10nezmnk_step003",
+    "brisbane_routeha27bdq6m_step006",
+    "brisbane_routep4jc4q8ck_step009",
+    "canberra_routef1dzt9bvv_step007",
+    "canberra_routef1dzt9bvv_step008",
+    "canberra_routef1dzt9bvv_step009",
+    "canberra_routef1dzt9bvv_step010",
+    "canberra_routef1dzt9bvv_step011",
+    "canberra_routewnjn7csh5_step000",
+    "canberra_routewnjn7csh5_step006",
+    "melbourne_routes0madsybw_step004",
+    "sydney_routerp75re40e_step009"
+  ],
+  "test": [
+    "brisbane_route0bmpfsqys_step010",
+    "brisbane_route8yc1y0ymd_step002",
+    "brisbane_routeakmf36hrj_step009",
+    "brisbane_routeha27bdq6m_step008",
+    "brisbane_routensnvm5nrs_step001",
+    "brisbane_routex3kg7736w_step000",
+    "brisbane_routex3kg7736w_step001",
+    "brisbane_routexk69sfm8b_step006",
+    "brisbane_routexk69sfm8b_step007",
+    "canberra_route4jpbakhf7_step002",
+    "canberra_routetc11kqgn1_step001",
+    "canberra_routewnjn7csh5_step002",
+    "sydney_routeaz49p6fx9_step002",
+    "sydney_routerp75re40e_step000",
+    "sydney_routevrjwn8bbx_step001"
+  ],
+  "samples": {
+    "brisbane_route0bmpfsqys_step010": {
+      "id": "brisbane_route0bmpfsqys_step010",
+      "city": "brisbane",
+      "route_id": "brisbane_route0bmpfsqys",
+      "step_index": 10,
+      "maneuver": "LEFT",
+      "instruction": "Turn left onto Beatty Rd"
+    },
+    "brisbane_route8yc1y0ymd_step002": {
+      "id": "brisbane_route8yc1y0ymd_step002",
+      "city": "brisbane",
+      "route_id": "brisbane_route8yc1y0ymd",
+      "step_index": 2,
+      "maneuver": "NAME_CHANGE",
+      "instruction": "Continue onto Inner City Byp (signs for Clem Jones Tunnel)"
+    },
+    "brisbane_routeakmf36hrj_step009": {
+      "id": "brisbane_routeakmf36hrj_step009",
+      "city": "brisbane",
+      "route_id": "brisbane_routeakmf36hrj",
+      "step_index": 9,
+      "maneuver": "RIGHT",
+      "instruction": "Turn right onto Kingsford Smith Dr/State Route 25"
+    },
+    "brisbane_routeha27bdq6m_step008": {
+      "id": "brisbane_routeha27bdq6m_step008",
+      "city": "brisbane",
+      "route_id": "brisbane_routeha27bdq6m",
+      "step_index": 8,
+      "maneuver": "STAY_RIGHT",
+      "instruction": "Keep right to stay on M7"
+    },
+    "brisbane_routensnvm5nrs_step001": {
+      "id": "brisbane_routensnvm5nrs_step001",
+      "city": "brisbane",
+      "route_id": "brisbane_routensnvm5nrs",
+      "step_index": 1,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Coronation Dr/State Route 33"
+    },
+    "brisbane_routex3kg7736w_step000": {
+      "id": "brisbane_routex3kg7736w_step000",
+      "city": "brisbane",
+      "route_id": "brisbane_routex3kg7736w",
+      "step_index": 0,
+      "maneuver": "RIGHT",
+      "instruction": "Turn right onto George St"
+    },
+    "brisbane_routex3kg7736w_step001": {
+      "id": "brisbane_routex3kg7736w_step001",
+      "city": "brisbane",
+      "route_id": "brisbane_routex3kg7736w",
+      "step_index": 1,
+      "maneuver": "RIGHT",
+      "instruction": "Turn right onto Turbot St"
+    },
+    "brisbane_routexk69sfm8b_step006": {
+      "id": "brisbane_routexk69sfm8b_step006",
+      "city": "brisbane",
+      "route_id": "brisbane_routexk69sfm8b",
+      "step_index": 6,
+      "maneuver": "STRAIGHT",
+      "instruction": "Continue straight onto Bradfield Hwy/Kemp Pl/State Route 15\nContinue to follow State Route 15"
+    },
+    "brisbane_routexk69sfm8b_step007": {
+      "id": "brisbane_routexk69sfm8b_step007",
+      "city": "brisbane",
+      "route_id": "brisbane_routexk69sfm8b",
+      "step_index": 7,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Keep right to continue on Barry Parade/State Route 15\nContinue to follow State Route 15\nDestination will be on the right"
+    },
+    "canberra_route4jpbakhf7_step002": {
+      "id": "canberra_route4jpbakhf7_step002",
+      "city": "canberra",
+      "route_id": "canberra_route4jpbakhf7",
+      "step_index": 2,
+      "maneuver": "ROUNDABOUT_LEFT",
+      "instruction": "At the roundabout, take the 1st exit onto Yarra Glen"
+    },
+    "canberra_routetc11kqgn1_step001": {
+      "id": "canberra_routetc11kqgn1_step001",
+      "city": "canberra",
+      "route_id": "canberra_routetc11kqgn1",
+      "step_index": 1,
+      "maneuver": "STRAIGHT",
+      "instruction": "Continue straight onto Belconnen Way"
+    },
+    "canberra_routewnjn7csh5_step002": {
+      "id": "canberra_routewnjn7csh5_step002",
+      "city": "canberra",
+      "route_id": "canberra_routewnjn7csh5",
+      "step_index": 2,
+      "maneuver": "NAME_CHANGE",
+      "instruction": "Continue onto Remembrance Driveway/Wakefield Ave"
+    },
+    "sydney_routeaz49p6fx9_step002": {
+      "id": "sydney_routeaz49p6fx9_step002",
+      "city": "sydney",
+      "route_id": "sydney_routeaz49p6fx9",
+      "step_index": 2,
+      "maneuver": "TURN_SLIGHT_LEFT",
+      "instruction": "Slight left to stay on Clarence St"
+    },
+    "sydney_routerp75re40e_step000": {
+      "id": "sydney_routerp75re40e_step000",
+      "city": "sydney",
+      "route_id": "sydney_routerp75re40e",
+      "step_index": 0,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left at the 1st cross street onto Bridge St"
+    },
+    "sydney_routevrjwn8bbx_step001": {
+      "id": "sydney_routevrjwn8bbx_step001",
+      "city": "sydney",
+      "route_id": "sydney_routevrjwn8bbx",
+      "step_index": 1,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto City Rd/Princes Hwy/A36\nContinue to follow Princes Hwy/A36\nDestination will be on the left"
+    },
+    "brisbane_route0bmpfsqys_step001": {
+      "id": "brisbane_route0bmpfsqys_step001",
+      "city": "brisbane",
+      "route_id": "brisbane_route0bmpfsqys",
+      "step_index": 1,
+      "maneuver": "LEFT",
+      "instruction": "Turn left onto Herschel St"
+    },
+    "brisbane_route0bmpfsqys_step002": {
+      "id": "brisbane_route0bmpfsqys_step002",
+      "city": "brisbane",
+      "route_id": "brisbane_route0bmpfsqys",
+      "step_index": 2,
+      "maneuver": "LEFT",
+      "instruction": "Turn left onto N Quay"
+    },
+    "brisbane_route0bmpfsqys_step004": {
+      "id": "brisbane_route0bmpfsqys_step004",
+      "city": "brisbane",
+      "route_id": "brisbane_route0bmpfsqys",
+      "step_index": 4,
+      "maneuver": "RAMP_LEFT",
+      "instruction": "Take exit 8 for State Rte 10/State Rte 11/Marshall Rd"
+    },
+    "brisbane_route0bmpfsqys_step006": {
+      "id": "brisbane_route0bmpfsqys_step006",
+      "city": "brisbane",
+      "route_id": "brisbane_route0bmpfsqys",
+      "step_index": 6,
+      "maneuver": "LEFT",
+      "instruction": "Turn left onto Toohey Rd/State Route 11"
+    },
+    "brisbane_route0bmpfsqys_step007": {
+      "id": "brisbane_route0bmpfsqys_step007",
+      "city": "brisbane",
+      "route_id": "brisbane_route0bmpfsqys",
+      "step_index": 7,
+      "maneuver": "SLIGHT_RIGHT",
+      "instruction": "Slight right onto Evans Rd/State Route 20"
+    },
+    "brisbane_route78pq19zcm_step000": {
+      "id": "brisbane_route78pq19zcm_step000",
+      "city": "brisbane",
+      "route_id": "brisbane_route78pq19zcm",
+      "step_index": 0,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Jephson St/State Route 20"
+    },
+    "brisbane_route78pq19zcm_step001": {
+      "id": "brisbane_route78pq19zcm_step001",
+      "city": "brisbane",
+      "route_id": "brisbane_route78pq19zcm",
+      "step_index": 1,
+      "maneuver": "TURN_SHARP_LEFT",
+      "instruction": "Sharp left onto High St/State Route 33"
+    },
+    "brisbane_route78pq19zcm_step002": {
+      "id": "brisbane_route78pq19zcm_step002",
+      "city": "brisbane",
+      "route_id": "brisbane_route78pq19zcm",
+      "step_index": 2,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Benson St/Coronation Dr/State Route 33\nContinue to follow Coronation Dr/State Route 33"
+    },
+    "brisbane_route8yc1y0ymd_step001": {
+      "id": "brisbane_route8yc1y0ymd_step001",
+      "city": "brisbane",
+      "route_id": "brisbane_route8yc1y0ymd",
+      "step_index": 1,
+      "maneuver": "RAMP_LEFT",
+      "instruction": "Merge onto Hale St/M3 via the ramp to Inner City Bypass/Sunshine Coast\nContinue to follow M3"
+    },
+    "brisbane_route8yc1y0ymd_step003": {
+      "id": "brisbane_route8yc1y0ymd_step003",
+      "city": "brisbane",
+      "route_id": "brisbane_route8yc1y0ymd",
+      "step_index": 3,
+      "maneuver": "RAMP_LEFT",
+      "instruction": "Take the exit towards Allison St"
+    },
+    "brisbane_route8yc1y0ymd_step004": {
+      "id": "brisbane_route8yc1y0ymd_step004",
+      "city": "brisbane",
+      "route_id": "brisbane_route8yc1y0ymd",
+      "step_index": 4,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Turn right onto Allison St"
+    },
+    "brisbane_route8yc1y0ymd_step005": {
+      "id": "brisbane_route8yc1y0ymd_step005",
+      "city": "brisbane",
+      "route_id": "brisbane_route8yc1y0ymd",
+      "step_index": 5,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Turn right onto Thompson St"
+    },
+    "brisbane_route8yc1y0ymd_step007": {
+      "id": "brisbane_route8yc1y0ymd_step007",
+      "city": "brisbane",
+      "route_id": "brisbane_route8yc1y0ymd",
+      "step_index": 7,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Turn right onto Breakfast Creek Rd/State Route 25\nContinue to follow State Route 25"
+    },
+    "brisbane_route8yc1y0ymd_step008": {
+      "id": "brisbane_route8yc1y0ymd_step008",
+      "city": "brisbane",
+      "route_id": "brisbane_route8yc1y0ymd",
+      "step_index": 8,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Chester St"
+    },
+    "brisbane_route8yc1y0ymd_step010": {
+      "id": "brisbane_route8yc1y0ymd_step010",
+      "city": "brisbane",
+      "route_id": "brisbane_route8yc1y0ymd",
+      "step_index": 10,
+      "maneuver": "ROUNDABOUT_LEFT",
+      "instruction": "At the roundabout, take the 1st exit onto James St\nDestination will be on the left"
+    },
+    "brisbane_routeakmf36hrj_step001": {
+      "id": "brisbane_routeakmf36hrj_step001",
+      "city": "brisbane",
+      "route_id": "brisbane_routeakmf36hrj",
+      "step_index": 1,
+      "maneuver": "SLIGHT_RIGHT",
+      "instruction": "Slight right onto Queen St"
+    },
+    "brisbane_routeakmf36hrj_step006": {
+      "id": "brisbane_routeakmf36hrj_step006",
+      "city": "brisbane",
+      "route_id": "brisbane_routeakmf36hrj",
+      "step_index": 6,
+      "maneuver": "LEFT",
+      "instruction": "Turn left onto Riverview Terrace"
+    },
+    "brisbane_routeakmf36hrj_step007": {
+      "id": "brisbane_routeakmf36hrj_step007",
+      "city": "brisbane",
+      "route_id": "brisbane_routeakmf36hrj",
+      "step_index": 7,
+      "maneuver": "RIGHT",
+      "instruction": "Turn right onto Rossiter Parade"
+    },
+    "brisbane_routebcpzcckt7_step000": {
+      "id": "brisbane_routebcpzcckt7_step000",
+      "city": "brisbane",
+      "route_id": "brisbane_routebcpzcckt7",
+      "step_index": 0,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Whitehill Rd"
+    },
+    "brisbane_routebcpzcckt7_step001": {
+      "id": "brisbane_routebcpzcckt7_step001",
+      "city": "brisbane",
+      "route_id": "brisbane_routebcpzcckt7",
+      "step_index": 1,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Turn right onto Karragaroo St"
+    },
+    "brisbane_routebcpzcckt7_step002": {
+      "id": "brisbane_routebcpzcckt7_step002",
+      "city": "brisbane",
+      "route_id": "brisbane_routebcpzcckt7",
+      "step_index": 2,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Chermside Rd"
+    },
+    "brisbane_routebcpzcckt7_step003": {
+      "id": "brisbane_routebcpzcckt7_step003",
+      "city": "brisbane",
+      "route_id": "brisbane_routebcpzcckt7",
+      "step_index": 3,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Turn right onto Salisbury Rd/State Route 39"
+    },
+    "brisbane_routebcpzcckt7_step004": {
+      "id": "brisbane_routebcpzcckt7_step004",
+      "city": "brisbane",
+      "route_id": "brisbane_routebcpzcckt7",
+      "step_index": 4,
+      "maneuver": "ROUNDABOUT_LEFT",
+      "instruction": "At the roundabout, take the 1st exit onto Warwick Rd\nDestination will be on the left"
+    },
+    "brisbane_routeetc318gfw_step000": {
+      "id": "brisbane_routeetc318gfw_step000",
+      "city": "brisbane",
+      "route_id": "brisbane_routeetc318gfw",
+      "step_index": 0,
+      "maneuver": "RIGHT",
+      "instruction": "Turn right onto Turbot St"
+    },
+    "brisbane_routeetc318gfw_step001": {
+      "id": "brisbane_routeetc318gfw_step001",
+      "city": "brisbane",
+      "route_id": "brisbane_routeetc318gfw",
+      "step_index": 1,
+      "maneuver": "LEFT",
+      "instruction": "Turn left onto Boundary St"
+    },
+    "brisbane_routeetc318gfw_step002": {
+      "id": "brisbane_routeetc318gfw_step002",
+      "city": "brisbane",
+      "route_id": "brisbane_routeetc318gfw",
+      "step_index": 2,
+      "maneuver": "RIGHT",
+      "instruction": "Turn right onto Water St"
+    },
+    "brisbane_routeetc318gfw_step005": {
+      "id": "brisbane_routeetc318gfw_step005",
+      "city": "brisbane",
+      "route_id": "brisbane_routeetc318gfw",
+      "step_index": 5,
+      "maneuver": "MERGE",
+      "instruction": "Merge onto M3"
+    },
+    "brisbane_routeetc318gfw_step006": {
+      "id": "brisbane_routeetc318gfw_step006",
+      "city": "brisbane",
+      "route_id": "brisbane_routeetc318gfw",
+      "step_index": 6,
+      "maneuver": "SLIGHT_RIGHT",
+      "instruction": "Slight right onto M5 (signs for Western Suburbs/Legacy Way Tunnel/Ipswich)Toll road"
+    },
+    "brisbane_routeg10nezmnk_step000": {
+      "id": "brisbane_routeg10nezmnk_step000",
+      "city": "brisbane",
+      "route_id": "brisbane_routeg10nezmnk",
+      "step_index": 0,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto MacAlister St"
+    },
+    "brisbane_routeg10nezmnk_step001": {
+      "id": "brisbane_routeg10nezmnk_step001",
+      "city": "brisbane",
+      "route_id": "brisbane_routeg10nezmnk",
+      "step_index": 1,
+      "maneuver": "ROUNDABOUT_LEFT",
+      "instruction": "At the roundabout, continue straight to stay on MacAlister St"
+    },
+    "brisbane_routeg10nezmnk_step002": {
+      "id": "brisbane_routeg10nezmnk_step002",
+      "city": "brisbane",
+      "route_id": "brisbane_routeg10nezmnk",
+      "step_index": 2,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Turn right onto Park St"
+    },
+    "brisbane_routeg10nezmnk_step004": {
+      "id": "brisbane_routeg10nezmnk_step004",
+      "city": "brisbane",
+      "route_id": "brisbane_routeg10nezmnk",
+      "step_index": 4,
+      "maneuver": "TURN_SLIGHT_LEFT",
+      "instruction": "Slight left onto Churchill St"
+    },
+    "brisbane_routeha27bdq6m_step003": {
+      "id": "brisbane_routeha27bdq6m_step003",
+      "city": "brisbane",
+      "route_id": "brisbane_routeha27bdq6m",
+      "step_index": 3,
+      "maneuver": "ROUNDABOUT_ENTER",
+      "instruction": "At the roundabout, take the 2nd exit onto Metroad 5"
+    },
+    "brisbane_routeha27bdq6m_step004": {
+      "id": "brisbane_routeha27bdq6m_step004",
+      "city": "brisbane",
+      "route_id": "brisbane_routeha27bdq6m",
+      "step_index": 4,
+      "maneuver": "STAY_LEFT",
+      "instruction": "Keep left"
+    },
+    "brisbane_routeha27bdq6m_step007": {
+      "id": "brisbane_routeha27bdq6m_step007",
+      "city": "brisbane",
+      "route_id": "brisbane_routeha27bdq6m",
+      "step_index": 7,
+      "maneuver": "MERGE",
+      "instruction": "Merge onto M7"
+    },
+    "brisbane_routeha27bdq6m_step012": {
+      "id": "brisbane_routeha27bdq6m_step012",
+      "city": "brisbane",
+      "route_id": "brisbane_routeha27bdq6m",
+      "step_index": 12,
+      "maneuver": "RIGHT",
+      "instruction": "Turn right onto Redbank Plains Rd/State Route 61 Continue to follow State Route 61"
+    },
+    "brisbane_routeha27bdq6m_step014": {
+      "id": "brisbane_routeha27bdq6m_step014",
+      "city": "brisbane",
+      "route_id": "brisbane_routeha27bdq6m",
+      "step_index": 14,
+      "maneuver": "CONTINUE",
+      "instruction": "Continue onto Blackstone Rd"
+    },
+    "brisbane_routejpqz1sjwr_step007": {
+      "id": "brisbane_routejpqz1sjwr_step007",
+      "city": "brisbane",
+      "route_id": "brisbane_routejpqz1sjwr",
+      "step_index": 7,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Peel St"
+    },
+    "brisbane_routensnvm5nrs_step002": {
+      "id": "brisbane_routensnvm5nrs_step002",
+      "city": "brisbane",
+      "route_id": "brisbane_routensnvm5nrs",
+      "step_index": 2,
+      "maneuver": "NAME_CHANGE",
+      "instruction": "Continue onto M3 (signs for S Brisbane)"
+    },
+    "brisbane_routevhjrd1bzw_step001": {
+      "id": "brisbane_routevhjrd1bzw_step001",
+      "city": "brisbane",
+      "route_id": "brisbane_routevhjrd1bzw",
+      "step_index": 1,
+      "maneuver": "STRAIGHT",
+      "instruction": "Continue straight onto Bradfield Hwy/Kemp Pl/State Route 15"
+    },
+    "brisbane_routevrkx8ntb_step001": {
+      "id": "brisbane_routevrkx8ntb_step001",
+      "city": "brisbane",
+      "route_id": "brisbane_routevrkx8ntb",
+      "step_index": 1,
+      "maneuver": "LEFT",
+      "instruction": "Turn right onto Edward St Parts of this road may be closed at certain times or days Destination will be on the left"
+    },
+    "brisbane_routevrkx8ntb_step002": {
+      "id": "brisbane_routevrkx8ntb_step002",
+      "city": "brisbane",
+      "route_id": "brisbane_routevrkx8ntb",
+      "step_index": 2,
+      "maneuver": "RIGHT",
+      "instruction": "Turn right onto Edward St Parts of this road may be closed at certain times or days Destination will be on the left"
+    },
+    "brisbane_routex3kg7736w_step002": {
+      "id": "brisbane_routex3kg7736w_step002",
+      "city": "brisbane",
+      "route_id": "brisbane_routex3kg7736w",
+      "step_index": 2,
+      "maneuver": "CONTINUE",
+      "instruction": "Continue straight to stay on Turbot St"
+    },
+    "brisbane_routex3kg7736w_step003": {
+      "id": "brisbane_routex3kg7736w_step003",
+      "city": "brisbane",
+      "route_id": "brisbane_routex3kg7736w",
+      "step_index": 3,
+      "maneuver": "MERGE",
+      "instruction": "Merge onto Wickham St"
+    },
+    "brisbane_routeys9vay54p_step000": {
+      "id": "brisbane_routeys9vay54p_step000",
+      "city": "brisbane",
+      "route_id": "brisbane_routeys9vay54p",
+      "step_index": 0,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Main Ave"
+    },
+    "brisbane_routeys9vay54p_step001": {
+      "id": "brisbane_routeys9vay54p_step001",
+      "city": "brisbane",
+      "route_id": "brisbane_routeys9vay54p",
+      "step_index": 1,
+      "maneuver": "NAME_CHANGE",
+      "instruction": "Continue onto Deshon St"
+    },
+    "brisbane_routeys9vay54p_step002": {
+      "id": "brisbane_routeys9vay54p_step002",
+      "city": "brisbane",
+      "route_id": "brisbane_routeys9vay54p",
+      "step_index": 2,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Turn right onto Logan Rd/State Route 95"
+    },
+    "canberra_route4jpbakhf7_step008": {
+      "id": "canberra_route4jpbakhf7_step008",
+      "city": "canberra",
+      "route_id": "canberra_route4jpbakhf7",
+      "step_index": 8,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Barry Dr"
+    },
+    "canberra_routef1dzt9bvv_step003": {
+      "id": "canberra_routef1dzt9bvv_step003",
+      "city": "canberra",
+      "route_id": "canberra_routef1dzt9bvv",
+      "step_index": 3,
+      "maneuver": "NAME_CHANGE",
+      "instruction": "Continue onto Bowen Dr"
+    },
+    "canberra_routepnhpb2398_step005": {
+      "id": "canberra_routepnhpb2398_step005",
+      "city": "canberra",
+      "route_id": "canberra_routepnhpb2398",
+      "step_index": 5,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Turn right onto Kings Ave"
+    },
+    "canberra_routeswgc57rz8_step004": {
+      "id": "canberra_routeswgc57rz8_step004",
+      "city": "canberra",
+      "route_id": "canberra_routeswgc57rz8",
+      "step_index": 4,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Keep left"
+    },
+    "canberra_routeswgc57rz8_step006": {
+      "id": "canberra_routeswgc57rz8_step006",
+      "city": "canberra",
+      "route_id": "canberra_routeswgc57rz8",
+      "step_index": 6,
+      "maneuver": "ROUNDABOUT_LEFT",
+      "instruction": "At the roundabout, take the 2nd exit and stay on Athllon Dr"
+    },
+    "canberra_routetc11kqgn1_step002": {
+      "id": "canberra_routetc11kqgn1_step002",
+      "city": "canberra",
+      "route_id": "canberra_routetc11kqgn1",
+      "step_index": 2,
+      "maneuver": "RAMP_RIGHT",
+      "instruction": "Turn right to merge onto Gungahlin Dr"
+    },
+    "canberra_routetrhpa3ev6_step009": {
+      "id": "canberra_routetrhpa3ev6_step009",
+      "city": "canberra",
+      "route_id": "canberra_routetrhpa3ev6",
+      "step_index": 9,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Aikman Dr"
+    },
+    "canberra_routewnjn7csh5_step001": {
+      "id": "canberra_routewnjn7csh5_step001",
+      "city": "canberra",
+      "route_id": "canberra_routewnjn7csh5",
+      "step_index": 1,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto MacArthur Ave"
+    },
+    "canberra_routewnjn7csh5_step003": {
+      "id": "canberra_routewnjn7csh5_step003",
+      "city": "canberra",
+      "route_id": "canberra_routewnjn7csh5",
+      "step_index": 3,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Turn right onto Limestone Ave/Remembrance Driveway\nContinue to follow Limestone Ave"
+    },
+    "canberra_routewnjn7csh5_step004": {
+      "id": "canberra_routewnjn7csh5_step004",
+      "city": "canberra",
+      "route_id": "canberra_routewnjn7csh5",
+      "step_index": 4,
+      "maneuver": "ROUNDABOUT_LEFT",
+      "instruction": "At the roundabout, take the 2nd exit onto Anzac Parade"
+    },
+    "canberra_routewnjn7csh5_step005": {
+      "id": "canberra_routewnjn7csh5_step005",
+      "city": "canberra",
+      "route_id": "canberra_routewnjn7csh5",
+      "step_index": 5,
+      "maneuver": "ROUNDABOUT_LEFT",
+      "instruction": "At the roundabout, take the 1st exit onto Parkes Way"
+    },
+    "melbourne_routes0madsybw_step000": {
+      "id": "melbourne_routes0madsybw_step000",
+      "city": "melbourne",
+      "route_id": "melbourne_routes0madsybw",
+      "step_index": 0,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Turn right towards Fitzroy St/Punt Rd/Wellington St"
+    },
+    "melbourne_routew6t8nhhtd_step004": {
+      "id": "melbourne_routew6t8nhhtd_step004",
+      "city": "melbourne",
+      "route_id": "melbourne_routew6t8nhhtd",
+      "step_index": 4,
+      "maneuver": "TURN_SHARP_RIGHT",
+      "instruction": "Sharp right onto Olympic Blvd/Swan St/Yarra Bank Hwy/State Route 20"
+    },
+    "sydney_route0w4gczwjs_step000": {
+      "id": "sydney_route0w4gczwjs_step000",
+      "city": "sydney",
+      "route_id": "sydney_route0w4gczwjs",
+      "step_index": 0,
+      "maneuver": "RAMP_RIGHT",
+      "instruction": "Slight right onto the ramp to Mount St"
+    },
+    "sydney_route0w4gczwjs_step001": {
+      "id": "sydney_route0w4gczwjs_step001",
+      "city": "sydney",
+      "route_id": "sydney_route0w4gczwjs",
+      "step_index": 1,
+      "maneuver": "STRAIGHT",
+      "instruction": "Take the ramp to Mount St"
+    },
+    "sydney_route0w4gczwjs_step007": {
+      "id": "sydney_route0w4gczwjs_step007",
+      "city": "sydney",
+      "route_id": "sydney_route0w4gczwjs",
+      "step_index": 7,
+      "maneuver": "STRAIGHT",
+      "instruction": "Take the exit onto M1 towards Airport/Eastern Subs"
+    },
+    "sydney_routeaz49p6fx9_step004": {
+      "id": "sydney_routeaz49p6fx9_step004",
+      "city": "sydney",
+      "route_id": "sydney_routeaz49p6fx9",
+      "step_index": 4,
+      "maneuver": "MERGE",
+      "instruction": "Merge onto Bradfield Hwy/Western Distributor/A4"
+    },
+    "sydney_routerp75re40e_step001": {
+      "id": "sydney_routerp75re40e_step001",
+      "city": "sydney",
+      "route_id": "sydney_routerp75re40e",
+      "step_index": 1,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Turn right onto Macquarie St"
+    },
+    "sydney_routerp75re40e_step002": {
+      "id": "sydney_routerp75re40e_step002",
+      "city": "sydney",
+      "route_id": "sydney_routerp75re40e",
+      "step_index": 2,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left (signs for M1/Eastern Suburbs/Airport/Wollongong/Canberra)"
+    },
+    "sydney_routerp75re40e_step007": {
+      "id": "sydney_routerp75re40e_step007",
+      "city": "sydney",
+      "route_id": "sydney_routerp75re40e",
+      "step_index": 7,
+      "maneuver": "NAME_CHANGE",
+      "instruction": "Continue onto Macleay St"
+    },
+    "sydney_routerp75re40e_step008": {
+      "id": "sydney_routerp75re40e_step008",
+      "city": "sydney",
+      "route_id": "sydney_routerp75re40e",
+      "step_index": 8,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Greenknowe Ave"
+    },
+    "sydney_routevrjwn8bbx_step000": {
+      "id": "sydney_routevrjwn8bbx_step000",
+      "city": "sydney",
+      "route_id": "sydney_routevrjwn8bbx",
+      "step_index": 0,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Turn right onto Broadway/A22"
+    },
+    "sydney_routexs00ryrks_step000": {
+      "id": "sydney_routexs00ryrks_step000",
+      "city": "sydney",
+      "route_id": "sydney_routexs00ryrks",
+      "step_index": 0,
+      "maneuver": "TURN_SLIGHT_RIGHT",
+      "instruction": "Slight right onto O'Sullivan Rd\nGo through 1 roundabout"
+    },
+    "brisbane_route0bmpfsqys_step005": {
+      "id": "brisbane_route0bmpfsqys_step005",
+      "city": "brisbane",
+      "route_id": "brisbane_route0bmpfsqys",
+      "step_index": 5,
+      "maneuver": "RIGHT",
+      "instruction": "Turn right onto Marshall Rd/State Route 10 Continue to follow Marshall Rd"
+    },
+    "brisbane_route8yc1y0ymd_step006": {
+      "id": "brisbane_route8yc1y0ymd_step006",
+      "city": "brisbane",
+      "route_id": "brisbane_route8yc1y0ymd",
+      "step_index": 6,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Edmondstone Rd\nGo through 1 roundabout"
+    },
+    "brisbane_routeakmf36hrj_step003": {
+      "id": "brisbane_routeakmf36hrj_step003",
+      "city": "brisbane",
+      "route_id": "brisbane_routeakmf36hrj",
+      "step_index": 3,
+      "maneuver": "CONTINUE",
+      "instruction": "Continue onto Breakfast Creek Rd/State Route 25"
+    },
+    "brisbane_routeg10nezmnk_step003": {
+      "id": "brisbane_routeg10nezmnk_step003",
+      "city": "brisbane",
+      "route_id": "brisbane_routeg10nezmnk",
+      "step_index": 3,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Warwick Rd"
+    },
+    "brisbane_routeha27bdq6m_step006": {
+      "id": "brisbane_routeha27bdq6m_step006",
+      "city": "brisbane",
+      "route_id": "brisbane_routeha27bdq6m",
+      "step_index": 6,
+      "maneuver": "RAMP_RIGHT",
+      "instruction": "Take the M7/Ipswich Mwy exit on the right toward Ipswich/Toowoomba"
+    },
+    "brisbane_routep4jc4q8ck_step009": {
+      "id": "brisbane_routep4jc4q8ck_step009",
+      "city": "brisbane",
+      "route_id": "brisbane_routep4jc4q8ck",
+      "step_index": 9,
+      "maneuver": "TURN_RIGHT",
+      "instruction": "Turn right onto Montague Rd\nDestination will be on the left"
+    },
+    "canberra_routef1dzt9bvv_step007": {
+      "id": "canberra_routef1dzt9bvv_step007",
+      "city": "canberra",
+      "route_id": "canberra_routef1dzt9bvv",
+      "step_index": 7,
+      "maneuver": "MERGE",
+      "instruction": "Merge onto Parkes Way"
+    },
+    "canberra_routef1dzt9bvv_step008": {
+      "id": "canberra_routef1dzt9bvv_step008",
+      "city": "canberra",
+      "route_id": "canberra_routef1dzt9bvv",
+      "step_index": 8,
+      "maneuver": "TURN_SLIGHT_RIGHT",
+      "instruction": "Slight right to stay on Parkes Way"
+    },
+    "canberra_routef1dzt9bvv_step009": {
+      "id": "canberra_routef1dzt9bvv_step009",
+      "city": "canberra",
+      "route_id": "canberra_routef1dzt9bvv",
+      "step_index": 9,
+      "maneuver": "ROUNDABOUT_LEFT",
+      "instruction": "At the roundabout, take the 2nd exit onto Coranderrk St"
+    },
+    "canberra_routef1dzt9bvv_step010": {
+      "id": "canberra_routef1dzt9bvv_step010",
+      "city": "canberra",
+      "route_id": "canberra_routef1dzt9bvv",
+      "step_index": 10,
+      "maneuver": "NAME_CHANGE",
+      "instruction": "Continue onto Cooyong St"
+    },
+    "canberra_routef1dzt9bvv_step011": {
+      "id": "canberra_routef1dzt9bvv_step011",
+      "city": "canberra",
+      "route_id": "canberra_routef1dzt9bvv",
+      "step_index": 11,
+      "maneuver": "TURN_LEFT",
+      "instruction": "Turn left onto Akuna St\nDestination will be on the left"
+    },
+    "canberra_routewnjn7csh5_step000": {
+      "id": "canberra_routewnjn7csh5_step000",
+      "city": "canberra",
+      "route_id": "canberra_routewnjn7csh5",
+      "step_index": 0,
+      "maneuver": "ROUNDABOUT_LEFT",
+      "instruction": "At the roundabout, take the 1st exit onto Wattle St"
+    },
+    "canberra_routewnjn7csh5_step006": {
+      "id": "canberra_routewnjn7csh5_step006",
+      "city": "canberra",
+      "route_id": "canberra_routewnjn7csh5",
+      "step_index": 6,
+      "maneuver": "STRAIGHT",
+      "instruction": "Take the Kings Ave ramp"
+    },
+    "melbourne_routes0madsybw_step004": {
+      "id": "melbourne_routes0madsybw_step004",
+      "city": "melbourne",
+      "route_id": "melbourne_routes0madsybw",
+      "step_index": 4,
+      "maneuver": "NAME_CHANGE",
+      "instruction": "Continue onto Jolimont Rd"
+    },
+    "sydney_routerp75re40e_step009": {
+      "id": "sydney_routerp75re40e_step009",
+      "city": "sydney",
+      "route_id": "sydney_routerp75re40e",
+      "step_index": 9,
+      "maneuver": "ROUNDABOUT_LEFT",
+      "instruction": "At the roundabout, take the 2nd exit onto Elizabeth Bay Rd"
+    }
+  }
+}

@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NavBuddy — AI-Augmented Navigation</title>
+  <meta name="description" content="NavBuddy: An AI navigation assistant using vision-language models and dashcam footage for context-aware, lane-level driving guidance." />
+  <meta property="og:title" content="NavBuddy — AI-Augmented Navigation" />
+  <meta property="og:description" content="Using VLMs and dashcam footage for context-aware lane-level guidance." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    /* === Variables === */
+    :root {
+      --bg: #080c16;
+      --bg-alt: #0d1220;
+      --bg-card: #111828;
+      --text: #b8c2d4;
+      --text-heading: #e8ecf4;
+      --text-muted: #8796a8;
+      --accent: #e8a838;
+      --accent-hover: #f0b840;
+      --accent-glow: rgba(232, 168, 56, 0.15);
+      --accent-glow-strong: rgba(232, 168, 56, 0.25);
+      --blue: #4d9fff;
+      --blue-glow: rgba(77, 159, 255, 0.12);
+      --border: #1a2438;
+      --border-hover: #2a3a58;
+      --radius: 12px;
+      --max-w: 1080px;
+      --transition: 0.3s ease;
+      --transition-fast: 0.2s ease;
+    }
+    [data-theme="light"] {
+      --bg: #f4f1ea;
+      --bg-alt: #ece8e0;
+      --bg-card: #ffffff;
+      --text: #3a4050;
+      --text-heading: #1a1f2e;
+      --text-muted: #8a929e;
+      --accent: #c88510;
+      --accent-hover: #b07008;
+      --accent-glow: rgba(200, 133, 16, 0.1);
+      --accent-glow-strong: rgba(200, 133, 16, 0.18);
+      --blue: #2563eb;
+      --blue-glow: rgba(37, 99, 235, 0.1);
+      --border: #d8d2c8;
+      --border-hover: #c0b8a8;
+    }
+
+    /* === Reset & Base === */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      overflow-x: hidden;
+      transition: background var(--transition), color var(--transition);
+      opacity: 0;
+      animation: page-fade-in 0.6s ease 0.1s forwards;
+    }
+    @keyframes page-fade-in {
+      to { opacity: 1; }
+    }
+
+    /* Dot grid texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+      background-size: 32px 32px;
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+    main, nav, footer { position: relative; z-index: 1; }
+
+    /* === Navigation === */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(8, 12, 22, 0.65);
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+    [data-theme="light"] nav {
+      background: rgba(244, 241, 234, 0.8);
+    }
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: var(--text-heading);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+    .nav-links a {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: color var(--transition);
+    }
+    .nav-links a:hover {
+      color: var(--accent);
+    }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .hamburger-btn {
+      display: none;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      transition: all var(--transition);
+    }
+    .hamburger-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 65px;
+      left: 0;
+      right: 0;
+      z-index: 99;
+      background: var(--bg-alt);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1.5rem 1rem;
+      flex-direction: column;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text);
+      text-decoration: none;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      transition: color var(--transition);
+    }
+    .mobile-menu a:last-child { border-bottom: none; }
+    .mobile-menu a:hover { color: var(--accent); }
+    .theme-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      transition: all var(--transition);
+      overflow: hidden;
+      position: relative;
+    }
+    .theme-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .theme-btn i {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .theme-btn:hover i {
+      transform: rotate(30deg);
+    }
+    .theme-btn.switching i {
+      transform: rotate(360deg) scale(0);
+    }
+
+    /* === Hero === */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8rem 2rem 6rem;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Gradient mesh background */
+    #hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 25% 55%, rgba(77, 159, 255, 0.08) 0%, transparent 100%),
+        radial-gradient(ellipse 50% 60% at 75% 35%, rgba(232, 168, 56, 0.06) 0%, transparent 100%),
+        radial-gradient(ellipse 40% 30% at 50% 80%, rgba(77, 159, 255, 0.04) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    /* Animated glow orb behind title */
+    .hero-glow {
+      position: absolute;
+      width: 500px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(232, 168, 56, 0.04) 0%, transparent 70%);
+      filter: blur(80px);
+      pointer-events: none;
+      animation: glow-drift 8s ease-in-out infinite;
+    }
+    [data-theme="light"] .hero-glow {
+      background: radial-gradient(ellipse, rgba(200, 133, 16, 0.03) 0%, transparent 70%);
+    }
+    @keyframes glow-drift {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+      50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .hero-badge i {
+      color: var(--accent);
+      font-size: 0.5rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(3rem, 8vw, 5.5rem);
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 2px 30px rgba(232, 168, 56, 0.08);
+      position: relative;
+      z-index: 2;
+    }
+    [data-theme="light"] .hero-title {
+      text-shadow: 0 1px 20px rgba(200, 133, 16, 0.06);
+    }
+    .hero-title .accent { color: var(--accent); }
+    .hero-subtitle {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      max-width: 580px;
+      color: var(--text);
+      font-weight: 300;
+      margin-bottom: 3rem;
+      line-height: 1.7;
+      position: relative;
+      z-index: 2;
+    }
+    .hero-authors {
+      margin-top: -1.5rem;
+      margin-bottom: 2rem;
+      color: var(--text-heading);
+      font-size: 0.98rem;
+      font-weight: 400;
+      line-height: 1.6;
+      position: relative;
+      z-index: 2;
+    }
+    .hero-authors sup {
+      font-size: 0.72em;
+      vertical-align: super;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.75rem 1.6rem;
+      border-radius: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all var(--transition);
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0a0f1a;
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px var(--accent-glow);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--text-heading);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    /* Hero SVG Route */
+    .hero-route {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(90vw, 800px);
+      height: auto;
+      opacity: 0.15;
+      pointer-events: none;
+    }
+    [data-theme="light"] .hero-route { opacity: 0.1; }
+    .route-line {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 900;
+      stroke-dashoffset: 900;
+      animation: draw-route 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards 0.3s;
+    }
+    .route-glow {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 900;
+      stroke-dashoffset: 900;
+      animation: draw-route 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards 0.3s;
+      opacity: 0.15;
+      filter: blur(4px);
+    }
+    .route-dot {
+      fill: var(--accent);
+      opacity: 0;
+    }
+    .route-dot.blue { fill: var(--blue); }
+    @keyframes draw-route { to { stroke-dashoffset: 0; } }
+    @keyframes dot-in {
+      0% { opacity: 0; r: 0; }
+      100% { opacity: 1; }
+    }
+    .rd1 { animation: dot-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.3s; }
+    .rd2 { animation: dot-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards 1.4s; }
+    .rd3 { animation: dot-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards 2.4s; }
+    .rd4 { animation: dot-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards 3.2s; }
+
+    /* === Sections === */
+    .section {
+      padding: 6rem 2rem;
+    }
+    .section-alt {
+      background: var(--bg-alt);
+    }
+    .container {
+      max-width: var(--max-w);
+      margin: 0 auto;
+    }
+    .section-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      font-weight: 700;
+      color: var(--text-heading);
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    /* === Abstract === */
+    .abstract-text {
+      font-size: 1.05rem;
+      line-height: 1.85;
+      max-width: 960px;
+      color: var(--text);
+    }
+    .abstract-text strong {
+      color: var(--text-heading);
+      font-weight: 600;
+    }
+    .highlights {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+      margin-top: 3rem;
+    }
+    .highlight-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.8rem;
+      padding: 1rem 1.2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: all var(--transition);
+    }
+    .highlight-item:hover {
+      border-color: var(--border-hover);
+    }
+    .highlight-item i {
+      color: var(--accent);
+      font-size: 1rem;
+      margin-top: 0.2rem;
+      flex-shrink: 0;
+    }
+    .highlight-item span {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-heading);
+    }
+
+    /* === Pipeline === */
+    .pipeline {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      margin-top: 2rem;
+      position: relative;
+    }
+    .pipeline-line {
+      position: absolute;
+      top: 27px;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: var(--border);
+      opacity: 0.6;
+      border-radius: 1px;
+    }
+    .pipe-step {
+      flex: 1;
+      text-align: center;
+      position: relative;
+    }
+    .pipe-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: var(--accent);
+      position: relative;
+      z-index: 2;
+      transition: all var(--transition);
+    }
+    .pipe-number {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 22px;
+      height: 22px;
+      background: var(--accent);
+      color: #0a0f1a;
+      border-radius: 50%;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3;
+    }
+    .pipe-step:hover .pipe-icon {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .pipe-label {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text-heading);
+      margin-bottom: 0.3rem;
+    }
+    .pipe-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      padding: 0 0.5rem;
+    }
+
+    /* === Augmentations === */
+    .aug-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .aug-card {
+      position: relative;
+      aspect-ratio: 3/4;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .aug-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+    .aug-info {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1.5rem;
+      z-index: 5;
+    }
+    .aug-condition {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #fff;
+      margin-bottom: 0.3rem;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    }
+    .aug-desc {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.5;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Rain card */
+    .aug-rain {
+      background: linear-gradient(170deg, #1a2a3d 0%, #15263a 40%, #0c1520 100%);
+    }
+    .aug-rain::before {
+      content: '';
+      position: absolute;
+      inset: -100%;
+      background: repeating-linear-gradient(
+        -70deg,
+        transparent,
+        transparent 3px,
+        rgba(130, 185, 255, 0.08) 3px,
+        rgba(130, 185, 255, 0.08) 4px
+      );
+      animation: rain-fall 0.35s linear infinite;
+      z-index: 1;
+    }
+    .aug-rain::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 30%, rgba(0, 0, 0, 0.55) 100%);
+      z-index: 2;
+    }
+    /* Rain splash particles */
+    .rain-particles {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      overflow: hidden;
+    }
+    .rain-particles::before,
+    .rain-particles::after {
+      content: '';
+      position: absolute;
+      bottom: 20%;
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: rgba(130, 185, 255, 0.3);
+      box-shadow:
+        20px 5px 0 rgba(130, 185, 255, 0.2),
+        55px -8px 0 rgba(130, 185, 255, 0.25),
+        90px 3px 0 rgba(130, 185, 255, 0.15),
+        130px -5px 0 rgba(130, 185, 255, 0.2),
+        170px 7px 0 rgba(130, 185, 255, 0.18),
+        210px -3px 0 rgba(130, 185, 255, 0.22);
+      animation: splash 1.2s ease-in-out infinite;
+    }
+    .rain-particles::after {
+      bottom: 35%;
+      left: 15px;
+      animation-delay: 0.6s;
+      opacity: 0.7;
+    }
+    @keyframes rain-fall {
+      to { transform: translate(14px, 24px); }
+    }
+    @keyframes splash {
+      0%, 100% { opacity: 0; transform: scale(0.5); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* Night card */
+    .aug-night {
+      background: linear-gradient(to bottom, #080c14, #040608);
+    }
+    .aug-night::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 110%, rgba(255, 235, 160, 0.1) 0%, transparent 70%),
+        radial-gradient(1px 1px at 15% 12%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 55% 22%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 78% 8%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 35% 5%, rgba(255, 255, 255, 0.2) 0%, transparent 100%),
+        radial-gradient(1px 1px at 88% 28%, rgba(255, 255, 255, 0.25) 0%, transparent 100%),
+        radial-gradient(1px 1px at 42% 35%, rgba(255, 255, 255, 0.15) 0%, transparent 100%),
+        radial-gradient(1px 1px at 68% 18%, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+      z-index: 1;
+    }
+    .aug-night::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.45) 100%);
+      z-index: 2;
+    }
+
+    /* Fog card */
+    .aug-fog {
+      background: linear-gradient(to bottom, #2a3040 0%, #232a38 30%, #1e2530 100%);
+    }
+    .aug-fog::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, transparent 5%, rgba(200, 210, 225, 0.12) 20%, rgba(200, 210, 225, 0.16) 50%, rgba(200, 210, 225, 0.1) 80%, transparent 95%),
+        linear-gradient(90deg, transparent 15%, rgba(200, 210, 225, 0.08) 35%, rgba(200, 210, 225, 0.12) 55%, rgba(200, 210, 225, 0.06) 75%, transparent 85%),
+        linear-gradient(90deg, transparent 0%, rgba(200, 210, 225, 0.1) 30%, rgba(200, 210, 225, 0.14) 60%, transparent 100%);
+      background-size: 100% 50px, 100% 40px, 100% 60px;
+      background-position: 0 30%, 0 50%, 0 65%;
+      background-repeat: no-repeat;
+      filter: blur(8px);
+      z-index: 1;
+      animation: fog-drift 6s ease-in-out infinite alternate;
+    }
+    @keyframes fog-drift {
+      0% { transform: translateX(-3%); opacity: 0.8; }
+      100% { transform: translateX(3%); opacity: 1; }
+    }
+    .aug-fog::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.5) 100%);
+      z-index: 2;
+    }
+    /* Fog particles */
+    .fog-particles {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      overflow: hidden;
+    }
+    .fog-particles::before,
+    .fog-particles::after {
+      content: '';
+      position: absolute;
+      width: 120px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(200, 210, 225, 0.06);
+      filter: blur(12px);
+    }
+    .fog-particles::before {
+      top: 25%;
+      left: 10%;
+      animation: fog-wisp 5s ease-in-out infinite alternate;
+    }
+    .fog-particles::after {
+      top: 55%;
+      right: 5%;
+      width: 90px;
+      height: 30px;
+      animation: fog-wisp 4s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes fog-wisp {
+      0% { transform: translateX(0) scaleX(1); opacity: 0.4; }
+      100% { transform: translateX(20px) scaleX(1.3); opacity: 0.8; }
+    }
+
+    /* === Resources === */
+    .resource-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .resource-card {
+      padding: 2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      text-decoration: none;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .resource-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+    .resource-card i {
+      font-size: 1.8rem;
+      color: var(--accent);
+    }
+    .resource-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-heading);
+    }
+    .resource-card p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+    .resource-card .arrow {
+      color: var(--text-muted);
+      transition: all var(--transition);
+      margin-top: auto;
+    }
+    .resource-card:hover .arrow {
+      color: var(--accent);
+      transform: translateX(6px);
+    }
+
+    /* === Citation === */
+    .cite-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 2rem;
+      margin-top: 2rem;
+      position: relative;
+      overflow-x: auto;
+    }
+    .cite-block pre {
+      font-family: 'SFMono-Regular', 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: var(--text);
+      white-space: pre;
+      margin: 0;
+    }
+    .cite-copy {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-family: 'Outfit', sans-serif;
+      transition: all var(--transition);
+    }
+    .cite-copy:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* === Footer === */
+    footer {
+      padding: 3rem 2rem 2rem;
+      text-align: center;
+      position: relative;
+    }
+    /* Gradient separator */
+    footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      max-width: 600px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--blue), var(--accent), transparent);
+      opacity: 0.3;
+    }
+    .footer-nav {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .footer-nav a {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color var(--transition);
+      letter-spacing: 0.02em;
+    }
+    .footer-nav a:hover {
+      color: var(--accent);
+    }
+    footer p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    footer p a {
+      color: var(--text);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+    footer p a:hover { color: var(--accent); }
+
+    /* === Scroll Reveal === */
+    .reveal {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-d1 { transition-delay: 0.1s; }
+    .reveal-d2 { transition-delay: 0.2s; }
+    .reveal-d3 { transition-delay: 0.3s; }
+    .reveal-d4 { transition-delay: 0.4s; }
+
+    /* === Responsive === */
+    @media (max-width: 900px) {
+      .resource-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .hamburger-btn { display: flex; }
+      .pipeline {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+      .pipeline-line { display: none; }
+      .pipe-step {
+        display: flex;
+        align-items: center;
+        text-align: left;
+        gap: 1rem;
+      }
+      .pipe-icon {
+        margin: 0;
+        flex-shrink: 0;
+      }
+      #compare-grid {
+        grid-template-columns: 1fr !important;
+      }
+      #compare-grid > div:nth-child(2) {
+        height: 1px !important;
+        width: 100% !important;
+      }
+      .resource-grid {
+        grid-template-columns: 1fr;
+      }
+      .section {
+        padding: 4rem 1.5rem;
+      }
+      .hero-actions {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+    @media (max-width: 480px) {
+      #hero { padding: 6rem 1.5rem 4rem; }
+      .section { padding: 3rem 1.2rem; }
+      .footer-nav { gap: 1rem; }
+    }
+  /* Dataset modal */
+  .ds-modal-bg {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 999;
+    align-items: center; justify-content: center;
+  }
+  .ds-modal-bg.open { display: flex; }
+  .ds-modal {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 28px; max-width: 520px; width: 92%;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .ds-modal-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px;
+  }
+  .ds-modal-title { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--accent); }
+  .ds-modal-title i { margin-right: 8px; }
+  .ds-modal-close {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 1rem; cursor: pointer; padding: 4px 8px;
+    transition: color 0.15s;
+  }
+  .ds-modal-close:hover { color: var(--text); }
+  .ds-modal-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 20px; }
+  .ds-steps { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
+  .ds-step-label {
+    font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--accent); margin-bottom: 6px;
+  }
+  .ds-code {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 14px;
+    font-family: 'Courier New', monospace; font-size: 0.78rem;
+    color: var(--text); overflow-x: auto; white-space: pre; line-height: 1.6;
+  }
+  .ds-modal-note { font-size: 0.72rem; color: var(--text-muted); line-height: 1.6; }
+  .ds-modal-note a { color: var(--accent); text-decoration: none; }
+  .ds-modal-note a:hover { text-decoration: underline; }
+
+  /* === Reduced Motion === */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    body { opacity: 1; }
+    .reveal { opacity: 1; transform: none; }
+  }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-left">
+      <a href="#" class="nav-logo">Nav<span>Buddy</span></a>
+      <div class="nav-links">
+        <a href="#abstract">Abstract</a>
+        <a href="#pipeline">Method</a>
+        <a href="#results">Results</a>
+        <a href="#compare">Compare</a>
+        <a href="#resources">Resources</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <button class="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-menu">
+        <i class="fas fa-bars" aria-hidden="true"></i>
+      </button>
+      <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+        <i class="fas fa-moon" aria-hidden="true"></i>
+      </button>
+    </div>
+  </nav>
+
+  <nav id="mobile-menu" class="mobile-menu" aria-label="Mobile navigation">
+    <a href="#abstract" onclick="closeMobileMenu()">Abstract</a>
+    <a href="#pipeline" onclick="closeMobileMenu()">Method</a>
+    <a href="#results" onclick="closeMobileMenu()">Results</a>
+    <a href="#compare" onclick="closeMobileMenu()">Compare</a>
+    <a href="#resources" onclick="closeMobileMenu()">Resources</a>
+    <a href="#citation" onclick="closeMobileMenu()">Citation</a>
+  </nav>
+
+  <main>
+    <!-- Hero -->
+    <section id="hero">
+      <svg class="hero-route" viewBox="0 0 700 350" aria-hidden="true">
+        <path d="M 30 300 Q 90 300 140 240 T 280 180 Q 340 150 400 120 T 520 80 Q 580 60 640 30"
+              class="route-glow" />
+        <path d="M 30 300 Q 90 300 140 240 T 280 180 Q 340 150 400 120 T 520 80 Q 580 60 640 30"
+              class="route-line" />
+        <circle cx="30" cy="300" r="7" class="route-dot rd1" />
+        <circle cx="280" cy="180" r="5" class="route-dot rd2" />
+        <circle cx="520" cy="80" r="5" class="route-dot rd3" />
+        <circle cx="640" cy="30" r="7" class="route-dot blue rd4" />
+      </svg>
+
+      <div class="hero-glow" style="top: 45%; left: 50%;"></div>
+
+      <div class="hero-badge">
+        <i class="fas fa-circle"></i>
+        Queensland University of Technology &middot; 2026
+      </div>
+      <h1 class="hero-title">Nav<span class="accent">Buddy</span></h1>
+      <p class="hero-subtitle">
+        An AI-augmented navigation assistant that uses vision-language models
+        and dashcam footage to deliver context-aware, lane-level driving guidance.
+      </p>
+      <p class="hero-authors">
+        Aron Bakes, Tony Nguyen, Mohammed Elhenawy <sup>&dagger;</sup>, Andry Rakotonirainy <sup>&dagger;</sup>
+      </p>
+      <div class="hero-actions">
+        <a href="#" class="btn btn-primary"><i class="fas fa-file-lines"></i> Read Paper</a>
+        <a href="#" class="btn btn-outline"><i class="fab fa-github"></i> Code</a>
+        <button class="btn btn-outline" onclick="openDatasetModal()"><i class="fas fa-database" aria-hidden="true"></i> Dataset</button>
+      </div>
+    </section>
+
+    <!-- Abstract -->
+    <section class="section section-alt" id="abstract">
+      <div class="container">
+        <div class="section-label reveal">Abstract</div>
+        <p class="abstract-text reveal reveal-d1">
+          Navigation systems such as Google Maps have transformed modern transport, yet their reliance on delayed or ambiguous instructions can increase cognitive load, particularly in complex multi-lane environments and for users with spatial or driving-related anxiety. We present <strong>NavBuddy</strong>, a zero-shot multimodal prompting framework and open-source toolkit that leverages vision-language models (VLMs) and real-world scene context to transform generic GPS instructions into concise, lane-aware guidance grounded in visible cues. We conduct a preliminary evaluation across frontier and open-source models on a dataset of 100 navigation steps with human-labelled ground truth. Performance is evaluated using semantic similarity (BERTScore F1), lane-change prediction (F1), and next-action accuracy.
+        </p>
+        <div class="highlights reveal reveal-d2">
+          <div class="highlight-item">
+            <i class="fas fa-eye"></i>
+            <span>VLM-driven scene understanding from dashcam footage</span>
+          </div>
+          <div class="highlight-item">
+            <i class="fas fa-road"></i>
+            <span>Lane-level guidance with visible landmark references</span>
+          </div>
+          <div class="highlight-item">
+            <i class="fas fa-cloud-rain"></i>
+            <span>Robust under adverse weather and lighting conditions</span>
+          </div>
+          <div class="highlight-item">
+            <i class="fas fa-database"></i>
+            <span>Open-source toolkit and 100-sample evaluation dataset</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pipeline -->
+    <section class="section" id="pipeline">
+      <div class="container">
+        <div class="section-label reveal">Method</div>
+        <h2 class="section-title reveal reveal-d1">How It Works</h2>
+        <div class="pipeline reveal reveal-d2">
+          <div class="pipeline-line"></div>
+          <div class="pipe-step">
+            <div class="pipe-icon">
+              <span class="pipe-number">01</span>
+              <i class="fas fa-route"></i>
+            </div>
+            <div class="pipe-text">
+              <div class="pipe-label">Route Data</div>
+              <div class="pipe-desc">Step-by-step directions from Google Maps or Valhalla</div>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-icon">
+              <span class="pipe-number">02</span>
+              <i class="fas fa-video"></i>
+            </div>
+            <div class="pipe-text">
+              <div class="pipe-label">Dashcam Feed</div>
+              <div class="pipe-desc">Multi-frame street-level imagery along the route</div>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-icon">
+              <span class="pipe-number">03</span>
+              <i class="fas fa-brain"></i>
+            </div>
+            <div class="pipe-text">
+              <div class="pipe-label">VLM Processing</div>
+              <div class="pipe-desc">Vision-language model extracts scene context and cues</div>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-icon">
+              <span class="pipe-number">04</span>
+              <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="pipe-text">
+              <div class="pipe-label">Context Fusion</div>
+              <div class="pipe-desc">Route, visual, and map data merged with confidence scoring</div>
+            </div>
+          </div>
+          <div class="pipe-step">
+            <div class="pipe-icon">
+              <span class="pipe-number">05</span>
+              <i class="fas fa-comment-dots"></i>
+            </div>
+            <div class="pipe-text">
+              <div class="pipe-label">Clear Guidance</div>
+              <div class="pipe-desc">Concise, lane-level instruction delivered to the driver</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Augmentations -->
+    <!-- Results -->
+    <section class="section" id="results">
+      <div class="container">
+        <div class="section-label reveal">Benchmark</div>
+        <h2 class="section-title reveal reveal-d1">Results on NavBuddy-100</h2>
+
+        <p class="reveal reveal-d1" style="color:var(--text);margin-bottom:2rem;max-width:700px;line-height:1.7;">
+          <strong style="color:var(--text-heading);">100</strong> navigation steps across
+          <strong style="color:var(--text-heading);">24</strong> frontier and open-weight models,
+          <strong style="color:var(--text-heading);">4</strong> input modalities, and
+          <strong style="color:var(--text-heading);">4</strong> Australian cities.
+          All metrics computed on image+prior modality against human-verified ground truth.
+        </p>
+
+        <!-- Leaderboard table -->
+        <div class="reveal reveal-d2" style="overflow-x:auto; margin-bottom: 2.5rem;">
+          <table id="leaderboard" style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border);">
+                <th style="text-align:left;padding:0.6rem 0.8rem;color:var(--text-heading);cursor:pointer;white-space:nowrap;" onclick="sortTable(0)">Model <i class="fas fa-sort" style="font-size:0.6rem;opacity:0.4;"></i></th>
+                <th style="text-align:right;padding:0.6rem 0.5rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;" onclick="sortTable(1)">Lat.</th>
+                <th style="text-align:right;padding:0.6rem 0.5rem;color:#3B82F6;cursor:pointer;white-space:nowrap;" onclick="sortTable(2)">BERT F1</th>
+                <th style="text-align:right;padding:0.6rem 0.5rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;" onclick="sortTable(3)">LC F1</th>
+                <th style="text-align:right;padding:0.6rem 0.5rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;" onclick="sortTable(4)">Act.</th>
+                <th style="text-align:right;padding:0.6rem 0.5rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;" onclick="sortTable(5)">Ln MAE</th>
+                <th style="text-align:right;padding:0.6rem 0.5rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;" onclick="sortTable(6)">Len.</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-body"></tbody>
+          </table>
+        </div>
+
+        <!-- Metric bar chart with dropdowns -->
+        <div class="reveal" style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
+          <h3 style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:600;color:var(--text-heading);margin:0;">Model Ranking</h3>
+          <select id="bar-metric" onchange="renderMetricBars();document.getElementById('bar-modality').style.display=this.value==='bs'?'':'none'" style="padding:0.35rem 0.6rem;background:var(--bg);color:var(--text-heading);border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:'Outfit',sans-serif;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238796a8%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;">
+            <option value="act">Action Accuracy</option>
+            <option value="lc">Lane Change F1</option>
+            <option value="bs">BERTScore F1</option>
+            <option value="ln">Lane Count MAE</option>
+          </select>
+          <select id="bar-modality" onchange="renderMetricBars()" style="display:none;padding:0.35rem 0.6rem;background:var(--bg);color:var(--text-heading);border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:'Outfit',sans-serif;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238796a8%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;">
+            <option value="ip">Image + Prior</option>
+            <option value="vp">Video + Prior</option>
+            <option value="p">Prior Only</option>
+            <option value="ap">Augment + Prior</option>
+          </select>
+        </div>
+        <div id="metric-bars" class="reveal reveal-d1" style="margin-bottom:2.5rem;"></div>
+
+      </div>
+    </section>
+
+    <!-- Compare -->
+    <section class="section section-alt" id="compare">
+      <div class="container">
+        <div class="section-label reveal">Interactive</div>
+        <h2 class="section-title reveal reveal-d1">Compare Models</h2>
+
+        <!-- Controls — left-aligned, no "vs" label -->
+        <div class="reveal reveal-d2" style="display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;align-items:center;margin-bottom:2rem;max-width:700px;">
+          <select id="model-a" style="padding:0.55rem 0.8rem;background:var(--bg);color:var(--text-heading);border:1px solid var(--border);border-radius:6px;font-size:0.82rem;font-family:'Outfit',sans-serif;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238796a8%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;"></select>
+          <select id="model-b" style="padding:0.55rem 0.8rem;background:var(--bg);color:var(--text-heading);border:1px solid var(--border);border-radius:6px;font-size:0.82rem;font-family:'Outfit',sans-serif;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238796a8%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;"></select>
+          <button onclick="nextSample()" style="padding:0.55rem 1rem;background:none;color:var(--text-muted);border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:'Outfit',sans-serif;cursor:pointer;transition:all 0.15s;white-space:nowrap;" onmouseenter="this.style.borderColor='var(--border-hover)';this.style.color='var(--text-heading)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">Next →</button>
+        </div>
+
+        <!-- Sample context -->
+        <div class="reveal reveal-d3" style="margin-bottom:1.5rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.2rem;">
+            <img id="compare-frame" src="" alt="Dashcam frame" style="width:100%;aspect-ratio:16/10;border-radius:6px;border:1px solid var(--border);object-fit:cover;" />
+            <img id="compare-map" src="" alt="Overhead map" style="width:100%;aspect-ratio:16/10;border-radius:6px;border:1px solid var(--border);object-fit:cover;object-position:center bottom;" />
+          </div>
+          <div style="display:flex;align-items:baseline;gap:0.6rem;margin-bottom:0.4rem;">
+            <span style="font-size:0.65rem;color:var(--text-muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;flex-shrink:0;">Step</span>
+            <span id="compare-nav" style="color:var(--text-heading);font-size:0.9rem;font-weight:500;"></span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:0.6rem;">
+            <span style="font-size:0.65rem;color:var(--text-muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;flex-shrink:0;">GT</span>
+            <span id="compare-gt" style="color:#4ade80;font-size:0.85rem;"></span>
+          </div>
+        </div>
+
+        <!-- A/B outputs — no wrapping cards, just a clean divider -->
+        <div style="display:grid;grid-template-columns:1fr 1px 1fr;gap:0;" id="compare-grid" class="reveal reveal-d4">
+          <div id="compare-col-a" style="padding:0 1.5rem 0 0;">
+            <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:0.5rem;" id="compare-label-a">Model A</div>
+            <div id="compare-instr-a" style="color:var(--text-heading);font-size:0.88rem;line-height:1.7;margin-bottom:0.6rem;"></div>
+            <div id="compare-meta-a"></div>
+          </div>
+          <div style="background:var(--border);"></div>
+          <div id="compare-col-b" style="padding:0 0 0 1.5rem;">
+            <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:0.5rem;" id="compare-label-b">Model B</div>
+            <div id="compare-instr-b" style="color:var(--text-heading);font-size:0.88rem;line-height:1.7;margin-bottom:0.6rem;"></div>
+            <div id="compare-meta-b"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resources -->
+    <section class="section section-alt" id="resources">
+      <div class="container">
+        <div class="section-label reveal">Resources</div>
+        <div class="resource-grid">
+          <a href="#" class="resource-card reveal reveal-d2" target="_blank" rel="noopener noreferrer">
+            <i class="fas fa-file-lines" aria-hidden="true"></i>
+            <h3>Paper</h3>
+            <p>Read the full paper on IEEE Xplore</p>
+            <span class="arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+          </a>
+          <a href="https://github.com/AronBakes/navbuddy" class="resource-card reveal reveal-d3" target="_blank" rel="noopener noreferrer">
+            <i class="fab fa-github" aria-hidden="true"></i>
+            <h3>Source Code</h3>
+            <p>Clone the repository and run NavBuddy locally</p>
+            <span class="arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+          </a>
+          <a href="#" class="resource-card reveal reveal-d4" onclick="event.preventDefault();openDatasetModal()">
+            <i class="fas fa-database"></i>
+            <h3>Dataset</h3>
+            <p>Download the NavBuddy-100 benchmark dataset</p>
+            <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Citation -->
+    <section class="section" id="citation">
+      <div class="container">
+        <div class="section-label reveal">Cite</div>
+        <h2 class="section-title reveal reveal-d1">Citation</h2>
+        <div class="cite-block reveal reveal-d2">
+          <button class="cite-copy" onclick="copyCitation()">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+<pre>@inproceedings{bakes2026navbuddy,
+  author    = {Bakes, Aron and Nguyen, Tony and Elhenawy, Mohammed and Rakotonirainy, Andry},
+  title     = {NavBuddy: An AI-Augmented Navigation Assistant for Context-Aware Route Guidance},
+  booktitle = {2026 IEEE International Conference on Computing and Machine Intelligence (ICMI)},
+  year      = {2026},
+  note      = {to appear}
+}</pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Dataset modal -->
+  <div id="dataset-modal" class="ds-modal-bg" onclick="if(event.target===this)closeDatasetModal()" role="dialog" aria-modal="true" aria-labelledby="ds-modal-title-id">
+    <div class="ds-modal">
+      <div class="ds-modal-head">
+        <span class="ds-modal-title" id="ds-modal-title-id"><i class="fas fa-database" aria-hidden="true"></i> NavBuddy-100</span>
+        <button class="ds-modal-close" onclick="closeDatasetModal()" aria-label="Close dataset modal"><i class="fas fa-times" aria-hidden="true"></i></button>
+      </div>
+      <p class="ds-modal-desc">100 held-out ground-truth navigation samples from real urban street environments. One dashcam frame per sample (100 images total), paired with overhead OSM maps and turn-by-turn instructions. Human-verified labels for lane-change detection and next-action prediction.</p>
+      <div class="ds-steps">
+        <div class="ds-step">
+          <div class="ds-step-label">1 — Install</div>
+          <pre class="ds-code">pip install navbuddy</pre>
+        </div>
+        <div class="ds-step">
+          <div class="ds-step-label">2 — Download NavBuddy-100</div>
+          <pre class="ds-code">navbuddy setup</pre>
+        </div>
+        <div class="ds-step">
+          <div class="ds-step-label">3 — Run inference</div>
+          <pre class="ds-code">navbuddy evaluate -d ./data/samples.jsonl \
+  -m google/gemini-3-flash-preview -n 5</pre>
+        </div>
+      </div>
+      <p class="ds-modal-note">Prompts for your Google Maps API key, downloads 100 frames (~$0.70) with pre-built overhead maps. For 4 frames per step, use <code>--frame-profile sparse4</code>.</p>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-nav">
+      <a href="#abstract">Abstract</a>
+      <a href="#pipeline">Method</a>
+      <a href="#augmentations">Robustness</a>
+      <a href="#resources">Resources</a>
+      <a href="#citation">Citation</a>
+    </div>
+    <p>&copy; 2026 <a href="#">Aron Bakes</a> &middot; Queensland University of Technology</p>
+  </footer>
+
+  <script>
+    /* Mobile menu */
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      const btn = document.querySelector('.hamburger-btn');
+      const isOpen = menu.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(isOpen));
+      btn.querySelector('i').className = isOpen ? 'fas fa-times' : 'fas fa-bars';
+    }
+    function closeMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      const btn = document.querySelector('.hamburger-btn');
+      menu.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.querySelector('i').className = 'fas fa-bars';
+    }
+    // Close on resize to desktop
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) closeMobileMenu();
+    });
+
+    /* Theme toggle with animation */
+    function toggleTheme() {
+      const html = document.documentElement;
+      const btn = document.querySelector('.theme-btn');
+      const icon = btn.querySelector('i');
+      btn.classList.add('switching');
+      setTimeout(() => {
+        const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
+        html.dataset.theme = next;
+        localStorage.setItem('navbuddy-theme', next);
+        icon.className = next === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+        btn.classList.remove('switching');
+      }, 200);
+    }
+    const saved = localStorage.getItem('navbuddy-theme');
+    if (saved) {
+      document.documentElement.dataset.theme = saved;
+      document.querySelector('.theme-btn i').className =
+        saved === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+    }
+
+    /* Scroll reveal */
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) e.target.classList.add('visible');
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    /* Dataset modal — focus management + keyboard */
+    let _modalTrigger = null;
+    function openDatasetModal() {
+      _modalTrigger = document.activeElement;
+      const modal = document.getElementById('dataset-modal');
+      modal.classList.add('open');
+      // Move focus to first focusable element
+      const focusable = modal.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])');
+      if (focusable.length) focusable[0].focus();
+    }
+    function closeDatasetModal() {
+      document.getElementById('dataset-modal').classList.remove('open');
+      if (_modalTrigger) { _modalTrigger.focus(); _modalTrigger = null; }
+    }
+    // ESC key closes modal; focus trap inside modal
+    document.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('dataset-modal');
+      if (!modal.classList.contains('open')) return;
+      if (e.key === 'Escape') { closeDatasetModal(); return; }
+      if (e.key === 'Tab') {
+        const focusable = [...modal.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')];
+        if (!focusable.length) return;
+        const first = focusable[0], last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    /* Copy citation with fallback */
+    function copyCitation() {
+      const text = document.querySelector('.cite-block pre').textContent;
+      const btn = document.querySelector('.cite-copy');
+      const succeed = () => {
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> Copy'; }, 2000);
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(succeed).catch(() => fallbackCopy(text, succeed));
+      } else {
+        fallbackCopy(text, succeed);
+      }
+    }
+    function fallbackCopy(text, cb) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      try { document.execCommand('copy'); cb(); } catch (_) {}
+      document.body.removeChild(ta);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       LEADERBOARD + CHARTS + COMPARE
+       ═══════════════════════════════════════════════════════════ */
+
+    const PROVIDER_COLORS = {
+      'openai':'#10a37f','google':'#4285F4','anthropic':'#D97757',
+      'x-ai':'#EF4444','qwen':'#a855f7','Qwen':'#a855f7',
+      'mistralai':'#f97316','meta':'#0668E1','bytedance':'#06b6d4',
+      'moonshotai':'#8b5cf6','nvidia':'#76b900','navbuddy':'#22d3ee',
+      'OpenGVLab':'#22c55e'
+    };
+    function providerOf(m) {
+      if (m.startsWith('GPT')||m.startsWith('gpt')) return 'openai';
+      if (m.startsWith('Gemini')||m.startsWith('gemini')) return 'google';
+      if (m.startsWith('Claude')||m.startsWith('claude')) return 'anthropic';
+      if (m.startsWith('Grok')||m.startsWith('grok')) return 'x-ai';
+      if (m.startsWith('Qwen')||m.startsWith('qwen')) return 'qwen';
+      if (m.includes('mistral')||m.includes('ministral')||m.includes('pixtral')) return 'mistralai';
+      if (m.includes('llama')||m.includes('maverick')) return 'meta';
+      if (m.includes('seed')) return 'bytedance';
+      if (m.includes('kimi')) return 'moonshotai';
+      if (m.includes('Intern')) return 'OpenGVLab';
+      if (m.includes('navbuddy')||m.includes('bo-')) return 'navbuddy';
+      return '';
+    }
+
+    const LB_DATA = [
+      // BERTScore: rescale_with_baseline=True, roberta-large, GT-100 deduped
+      // params: active parameters in billions (est. = community estimate for closed models)
+      // Frontier — OpenAI
+      {m:"GPT-4o-mini",lat:9.4,params:8,ip:0.617,vp:0.609,p:0.592,ap:0.603,lc:0.577,act:0.680,ln:1.82,len:9.8},
+      {m:"GPT-4.1",lat:4.8,params:200,ip:0.446,vp:null,p:0.590,ap:0.374,lc:0.683,act:0.768,ln:2.45,len:13.4},
+      {m:"GPT-4.1-mini",lat:20.3,params:70,ip:0.560,vp:0.532,p:0.573,ap:0.556,lc:0.667,act:0.778,ln:2.04,len:12.6},
+      {m:"GPT-4.1-nano",lat:3.8,params:8,ip:0.490,vp:null,p:0.507,ap:0.478,lc:0.349,act:0.667,ln:1.57,len:14.3},
+      {m:"GPT-5.4",lat:4.1,params:200,ip:0.549,vp:0.518,p:0.553,ap:0.546,lc:0.674,act:0.710,ln:2.26,len:13.6},
+      {m:"GPT-5.4-mini",lat:11.9,params:70,ip:0.521,vp:0.539,p:0.572,ap:0.519,lc:0.649,act:0.758,ln:2.33,len:12.3},
+      {m:"GPT-5.4-nano",lat:11.6,params:8,ip:0.502,vp:0.502,p:0.514,ap:0.501,lc:0.526,act:0.727,ln:1.72,len:15.6},
+      {m:"GPT-5.2-codex",lat:5.5,params:200,ip:0.561,vp:0.516,p:0.579,ap:0.530,lc:0.659,act:0.770,ln:2.14,len:13.7},
+      {m:"GPT-5.1-codex-mini",lat:8.3,params:70,ip:0.490,vp:0.371,p:0.439,ap:0.503,lc:0.612,act:0.697,ln:2.27,len:14.1},
+      // Frontier — Google
+      {m:"Gemini 3 Flash",lat:9.3,params:30,ip:0.546,vp:0.568,p:0.521,ap:0.552,lc:0.421,act:0.740,ln:2.26,len:14.7},
+      {m:"Gemini 3.1 Pro",lat:23.5,params:175,ip:0.560,vp:0.548,p:0.565,ap:0.527,lc:0.623,act:0.750,ln:1.92,len:12.6},
+      {m:"Gemini 3.1 Flash Lite",lat:7.8,params:8,ip:0.573,vp:0.575,p:0.549,ap:0.572,lc:0.507,act:0.747,ln:2.18,len:12.9},
+      // Frontier — Anthropic
+      {m:"Claude Sonnet 4.6",lat:8.8,params:70,ip:0.576,vp:0.575,p:0.510,ap:0.562,lc:0.644,act:0.727,ln:2.28,len:12.1},
+      {m:"Claude Sonnet 4.5",lat:11.9,params:70,ip:0.527,vp:0.593,p:0.476,ap:0.534,lc:0.583,act:0.784,ln:2.18,len:11.0},
+      {m:"Claude Sonnet 4",lat:7.8,params:70,ip:0.529,vp:0.492,p:0.494,ap:0.537,lc:0.444,act:0.750,ln:2.91,len:9.8},
+      {m:"Claude Opus 4.6",lat:8.0,params:200,ip:0.554,vp:0.540,p:0.465,ap:0.538,lc:0.640,act:0.760,ln:2.28,len:15.3},
+      {m:"Claude Opus 4.5",lat:8.4,params:200,ip:0.505,vp:0.509,p:0.412,ap:0.516,lc:0.600,act:0.795,ln:2.18,len:14.5},
+      {m:"Claude Opus 4.1",lat:10.4,params:200,ip:0.553,vp:0.497,p:0.445,ap:0.562,lc:0.600,act:0.861,ln:2.67,len:9.0},
+      {m:"Claude Opus 4",lat:13.0,params:200,ip:0.492,vp:0.481,p:0.484,ap:0.561,lc:0.556,act:0.792,ln:2.00,len:9.2},
+      {m:"Claude Haiku 4.5",lat:7.6,params:8,ip:0.578,vp:0.569,p:0.536,ap:0.551,lc:0.667,act:0.727,ln:2.20,len:10.7},
+      {m:"Claude 3 Haiku",lat:6.3,params:8,ip:0.477,vp:0.504,p:0.562,ap:0.473,lc:0.563,act:0.687,ln:2.08,len:15.8},
+      // Frontier — xAI
+      {m:"Grok 4.1 Fast",lat:23.6,params:175,ip:0.585,vp:0.579,p:0.549,ap:0.575,lc:0.567,act:0.717,ln:1.96,len:9.2},
+      {m:"Grok 4.20",lat:4.4,params:175,ip:0.597,vp:0.613,p:0.620,ap:0.575,lc:0.304,act:0.768,ln:2.43,len:8.1},
+      {m:"Grok 4 Fast",lat:23.5,params:175,ip:0.570,vp:0.585,p:0.532,ap:0.578,lc:0.541,act:0.660,ln:2.14,len:10.1},
+      // Open-weight — Qwen
+      {m:"Qwen3-VL-8B",lat:7.8,params:8,ip:0.549,vp:0.591,p:0.542,ap:0.550,lc:0.415,act:0.788,ln:2.20,len:11.1},
+      {m:"Qwen3-VL-32B",lat:5.4,params:32,ip:0.541,vp:0.405,p:0.543,ap:0.410,lc:0.602,act:0.737,ln:2.33,len:14.1},
+      {m:"Qwen2.5-VL-72B",lat:5.6,params:72,ip:0.577,vp:0.575,p:0.562,ap:0.474,lc:0.608,act:0.670,ln:2.26,len:11.0},
+      {m:"Qwen2.5-VL-3B",lat:2.5,params:3,ip:0.499,vp:null,p:null,ap:null,lc:0.384,act:0.470,ln:1.98,len:11.6},
+      {m:"Qwen3.5-Flash",lat:30.8,params:3,ip:0.536,vp:null,p:0.461,ap:0.453,lc:0.667,act:0.677,ln:2.23,len:12.1},
+    ];
+
+    // Find best per column (higher=better except ln=lower)
+    const best = {};
+    ['ip','lc','act'].forEach(k => {
+      best[k] = Math.max(...LB_DATA.map(r => r[k]||0));
+    });
+    best.ln = Math.min(...LB_DATA.map(r => r.ln));
+
+    function renderLeaderboard() {
+      const tbody = document.getElementById('leaderboard-body');
+      tbody.innerHTML = LB_DATA.map(r => {
+        const pc = PROVIDER_COLORS[providerOf(r.m)] || 'var(--text-muted)';
+        const cell = (v, k) => {
+          if (v === null || v === undefined) return '<td style="text-align:right;padding:0.5rem;color:var(--text-muted);">—</td>';
+          const isBest = v === best[k];
+          const bold = isBest ? 'font-weight:700;color:var(--text-heading);' : '';
+          return `<td style="text-align:right;padding:0.5rem;font-family:monospace;font-size:0.78rem;${bold}">${v.toFixed(3)}</td>`;
+        };
+        return `<tr style="border-bottom:1px solid var(--border);transition:background 0.15s;" onmouseenter="this.style.background='var(--bg-alt)'" onmouseleave="this.style.background=''">
+          <td style="padding:0.5rem 0.8rem;white-space:nowrap;"><span style="display:inline-block;width:3px;height:14px;border-radius:2px;background:${pc};margin-right:8px;vertical-align:middle;"></span>${r.m}</td>
+          <td style="text-align:right;padding:0.5rem;color:var(--text-muted);font-size:0.78rem;">${r.lat}s</td>
+          ${cell(r.ip,'ip')}${cell(r.lc,'lc')}${cell(r.act,'act')}
+          <td style="text-align:right;padding:0.5rem;font-family:monospace;font-size:0.78rem;${r.ln===best.ln?'font-weight:700;color:var(--text-heading);':''}">${r.ln.toFixed(2)}</td>
+          <td style="text-align:right;padding:0.5rem;color:var(--text-muted);font-size:0.78rem;">${r.len}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    let sortCol = -1, sortAsc = true;
+    function sortTable(col) {
+      if (sortCol === col) sortAsc = !sortAsc;
+      else { sortCol = col; sortAsc = col === 0 ? true : false; }
+      const keys = ['m','lat','ip','lc','act','ln','len'];
+      const k = keys[col];
+      LB_DATA.sort((a,b) => {
+        let va = a[k], vb = b[k];
+        if (va === null) va = -999; if (vb === null) vb = -999;
+        if (typeof va === 'string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+        return sortAsc ? va - vb : vb - va;
+      });
+      renderLeaderboard();
+    }
+
+    // Unified metric bar chart with modality support
+    function renderMetricBars() {
+      const metric = document.getElementById('bar-metric').value;
+      const modality = document.getElementById('bar-modality').value;
+      const key = metric === 'bs' ? modality : metric;
+      const isBs = metric === 'bs';
+      const filtered = LB_DATA.filter(r => r[key] != null);
+      if (!filtered.length) {
+        document.getElementById('metric-bars').innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;">No data for this combination</div>';
+        return;
+      }
+      const isLn = key === 'ln';
+      // ln: lower = better, sort ascending; others: higher = better, sort descending
+      const sorted = [...filtered].sort((a,b) => isLn ? a[key] - b[key] : b[key] - a[key]);
+      const maxVal = Math.max(...sorted.map(r => r[key]));
+      const minVal = Math.min(...sorted.map(r => r[key]));
+      const fmt = v => isLn ? v.toFixed(2) : (isBs ? v.toFixed(3) : (v*100).toFixed(1) + '%');
+      document.getElementById('metric-bars').innerHTML = sorted.map(r => {
+        const pc = PROVIDER_COLORS[providerOf(r.m)] || '#888';
+        const w = isLn ? (maxVal > 0 ? ((maxVal - r[key] + minVal) / maxVal * 100).toFixed(1) : '0') : (maxVal > 0 ? (r[key] / maxVal * 100).toFixed(1) : '0');
+        return `<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem;">
+          <div style="width:140px;text-align:right;font-size:0.75rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.m}</div>
+          <div style="flex:1;height:18px;background:var(--bg);border-radius:4px;overflow:hidden;position:relative;">
+            <div style="height:100%;width:${w}%;background:${pc};border-radius:4px;"></div>
+          </div>
+          <div style="width:48px;text-align:right;font-size:0.72rem;font-family:monospace;color:var(--text);">${fmt(r[key])}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // ═══ COMPARE ═══
+    const COMPARE_DATA = [{"id": "brisbane_route78pq19zcm_step002", "nav": "Turn left onto Benson St/Coronation Dr/State Route 33", "gt": "Turn left past the Footmotion store at the green Benson St sign.", "gt_action": "turn_left", "models": {"gpt-4o-mini": {"instruction": "Turn left at the traffic lights onto Benson St.", "action": "turn_left", "lc": "yes", "landmarks": ["traffic_light", "Benson St sign"]}, "gpt-5.4": {"instruction": "Turn left at the lights onto Benson Street, staying in the left lane.", "action": "turn_left", "lc": "yes", "landmarks": ["traffic_light", "road_sign", "FootMotion store"]}, "gemini-3-flash-preview": {"instruction": "From the left lane, turn left onto Benson Street at the green City sign.", "action": "turn_left", "lc": "no", "landmarks": ["directional_sign", "traffic_light", "high-rise_building"]}, "gemini-3.1-pro-preview": {"instruction": "Use the left lane to turn left at the traffic light.", "action": "turn_left", "lc": "no", "landmarks": ["traffic_light"]}, "claude-sonnet-4.6": {"instruction": "Turn left onto Benson St following the Route 33 City sign ahead.", "action": "turn_left", "lc": "yes", "landmarks": ["traffic_light", "route_sign"]}, "claude-opus-4.6": {"instruction": "Use left lane and turn left onto Benson St at the Route 33 City sign near Footmotion.", "action": "turn_left", "lc": "yes", "landmarks": ["direction_sign", "retail_store", "high_rise_building"]}, "grok-4.1-fast": {"instruction": "Turn left at Benson St sign on right onto Coronation Dr.", "action": "turn_left", "lc": "no", "landmarks": ["Benson St sign"]}, "grok-4.20-beta": {"instruction": "Turn left onto Benson St at Footmotion store", "action": "turn_left", "lc": "no", "landmarks": ["Footmotion store"]}, "qwen3-vl-8b-instruct": {"instruction": "Turn left at the footpath sign onto Benson St/Coronation Dr/State Route 33", "action": "turn_left", "lc": "no", "landmarks": ["footpath_sign", "traffic_light", "FootMotion store"]}, "qwen2.5-vl-72b-instruct": {"instruction": "Turn left at Benson St sign, near Footwear Plus store.", "action": "turn_left", "lc": "no", "landmarks": ["Benson St sign", "Footwear Plus store"]}, "Qwen2.5-VL-3B-Instruct": {"instruction": "Turn left onto Benson St/Coronation Dr/State Route 33. Continue to follow Coronation Dr/State Route 33.", "action": "straight", "lc": "no", "landmarks": ["Benson St", "Coronation Dr", "State Route 33"]}}}, {"id": "brisbane_route8yc1y0ymd_step002", "nav": "Continue onto Inner City Byp (signs for Clem Jones Tunnel)", "gt": "Stay in right lane for Inner City Byp, signs for Clem Jones Tunnel ahead", "gt_action": "straight", "models": {"gpt-4o-mini": {"instruction": "Continue onto Inner City Byp, following signs for Clem Jones Tunnel.", "action": "merge_right", "lc": "no", "landmarks": ["road_signs", "inner_city_bypass"]}, "gpt-5.4": {"instruction": "Keep right and continue onto Inner City Bypass, following the overhead Clem Jones Tunnel signs.", "action": "keep_right", "lc": "yes", "landmarks": ["overhead_signs", "overpass"]}, "gemini-3-flash-preview": {"instruction": "Keep right at the fork following signs for Clem Jones Tunnel and Gold Coast.", "action": "fork_right", "lc": "no", "landmarks": ["overhead_sign", "freeway_overpass"]}, "gemini-3.1-pro-preview": {"instruction": "Keep left under the overhead signs to stay on the Inner City Bypass.", "action": "keep_left", "lc": "no", "landmarks": ["overhead sign"]}, "claude-sonnet-4.6": {"instruction": "Keep left following green signs for Clem Jones Tunnel and Gold Coast.", "action": "keep_left", "lc": "no", "landmarks": ["overhead_highway_signs"]}, "claude-opus-4.6": {"instruction": "Stay in left lanes following Sunshine Coast signs, continue onto Inner City Bypass past Gold Coast exit.", "action": "straight", "lc": "no", "landmarks": ["overhead_highway_signs", "overpass", "street_lights", "concrete_barrier"]}, "grok-4.1-fast": {"instruction": "Continue straight under overhead signs for Clem Jones Tunnel.", "action": "straight", "lc": "no", "landmarks": ["overhead_signs"]}, "grok-4.20-beta": {"instruction": "Continue onto Inner City Byp in left lane", "action": "straight", "lc": "no", "landmarks": ["overhead_sign", "concrete_barrier"]}, "qwen3-vl-8b-instruct": {"instruction": "Stay in right lane, continue onto Inner City Byp for Clem Jones Tunnel", "action": "straight", "lc": "no", "landmarks": ["traffic_sign", "road_sign", "Clem Jones Tunnel sign"]}, "qwen2.5-vl-72b-instruct": {"instruction": "Keep right towards Inner City Byp, follow signs for Clem Jones Tunnel.", "action": "keep_right", "lc": "yes", "landmarks": ["road_sign", "inner_city_bypass"]}, "Qwen2.5-VL-3B-Instruct": {"instruction": "Continue onto the Inner City Bypass towards Clem Jones Tunnel.", "action": "straight", "lc": "no", "landmarks": ["Inner City Bypass", "Clem Jones Tunnel"]}}}, {"id": "brisbane_route8yc1y0ymd_step004", "nav": "Turn right onto Allison St", "gt": "Turn right onto Allison St", "gt_action": "turn_right", "models": {"gpt-4o-mini": {"instruction": "Turn right onto Allison St at the petrol station ahead.", "action": "turn_right", "lc": "yes", "landmarks": ["petrol_station"]}, "gpt-5.4": {"instruction": "Keep right in the right-turn lane, then turn right after the petrol station.", "action": "turn_right", "lc": "yes", "landmarks": ["petrol_station"]}, "gemini-3-flash-preview": {"instruction": "Using the right lane, turn right onto Allison Street past the Ampol petrol station.", "action": "turn_right", "lc": "no", "landmarks": ["Ampol petrol station", "traffic_light", "yellow billboard"]}, "gemini-3.1-pro-preview": {"instruction": "After the petrol station on your left, use the right lanes to turn right.", "action": "turn_right", "lc": "no", "landmarks": ["petrol_station", "traffic_light"]}, "claude-sonnet-4.6": {"instruction": "Turn right onto Allison St past the petrol station on your left.", "action": "turn_right", "lc": "no", "landmarks": ["petrol_station"]}, "claude-opus-4.6": {"instruction": "Use right lane, turn right onto Allison St past the petrol station on your left.", "action": "turn_right", "lc": "yes", "landmarks": ["petrol_station", "concrete_median_barrier"]}, "grok-4.1-fast": {"instruction": "Turn right onto Allison St at traffic lights past petrol station.", "action": "turn_right", "lc": "yes", "landmarks": ["petrol_station", "traffic_light"]}, "grok-4.20-beta": {"instruction": "Turn right onto Allison St after petrol station", "action": "turn_right", "lc": "no", "landmarks": ["petrol_station"]}, "qwen3-vl-8b-instruct": {"instruction": "Turn right onto Allison St, past the petrol station on your left.", "action": "turn_right", "lc": "no", "landmarks": ["petrol_station"]}, "qwen2.5-vl-72b-instruct": {"instruction": "Turn right onto Allison St after passing the petrol station.", "action": "turn_right", "lc": "no", "landmarks": ["petrol_station"]}, "Qwen2.5-VL-3B-Instruct": {"instruction": "Continue straight for 241 meters and then turn right onto Allison St.", "action": "straight", "lc": "no", "landmarks": ["Allison St"]}}}, {"id": "brisbane_route8yc1y0ymd_step008", "nav": "Turn left onto Chester St", "gt": "Change to the left lane to turn left onto Chester St after the bus stop.", "gt_action": "turn_left", "models": {"gpt-4o-mini": {"instruction": "Turn left onto Chester St at the intersection ahead.", "action": "turn_left", "lc": "yes", "landmarks": ["Alex Perry building", "traffic_light"]}, "gpt-5.4": {"instruction": "Move to the left lane and turn left at the next lights onto Chester Street.", "action": "turn_left", "lc": "yes", "landmarks": ["traffic_light", "bus_stop", "apartment_building"]}, "gemini-3-flash-preview": {"instruction": "Move to the left lane and turn left onto Chester Street after the Alex Perry building.", "action": "turn_left", "lc": "yes", "landmarks": ["Alex Perry building", "bus_stop", "traffic_light"]}, "gemini-3.1-pro-preview": {"instruction": "Change to the left lane to turn left onto Chester St after the bus stop.", "action": "turn_left", "lc": "yes", "landmarks": ["bus_stop"]}, "claude-sonnet-4.6": {"instruction": "Turn left onto Chester St, staying in the left lane past the Alex Perry building.", "action": "turn_left", "lc": "yes", "landmarks": ["traffic_light"]}, "claude-opus-4.6": {"instruction": "Use left lane and turn left onto Chester St, past the Alex Perry building on your left.", "action": "turn_left", "lc": "yes", "landmarks": ["Alex Perry building", "glass_building_under_construction", "tree-lined_median"]}, "grok-4.1-fast": {"instruction": "At roundabout ahead, take 3rd exit left onto Chester St.", "action": "roundabout", "lc": "no", "landmarks": []}, "grok-4.20-beta": {"instruction": "Turn left onto Chester St after blue glass building", "action": "turn_left", "lc": "no", "landmarks": ["traffic_light", "modern_building"]}, "qwen3-vl-8b-instruct": {"instruction": "Turn left onto Chester St, passing the Alex Perry building.", "action": "turn_left", "lc": "no", "landmarks": ["Alex Perry building"]}, "qwen2.5-vl-72b-instruct": {"instruction": "Turn left past Ann St tram stop; city centre buildings are ahead.", "action": "turn_left", "lc": "no", "landmarks": ["Ann St tram stop", "city centre buildings"]}, "Qwen2.5-VL-3B-Instruct": {"instruction": "Turn left onto Chester St. At the roundabout, take the 3rd exit onto Kent St.", "action": "turn_left", "lc": "yes", "landmarks": ["roundabout"]}}}, {"id": "brisbane_route0bmpfsqys_step007", "nav": "Slight right onto Evans Rd/State Route 20", "gt": "Merge into the right turning lanes, then turn right and continue past the BP petrol station.", "gt_action": "slight_right", "models": {"gpt-4o-mini": {"instruction": "Slight right onto Evans Rd near McDonald's.", "action": "turn_right", "lc": "yes", "landmarks": ["McDonald's"]}, "gpt-5.4": {"instruction": "Keep right and bear right onto Evans Road at the lights, passing McDonald's on your left.", "action": "keep_right", "lc": "yes", "landmarks": ["traffic_light", "mcdonalds"]}, "gemini-3-flash-preview": {"instruction": "Pass McDonald's on the left, then keep right to stay on Evans Road at the lights.", "action": "keep_right", "lc": "no", "landmarks": ["McDonald's", "traffic_light"]}, "gemini-3.1-pro-preview": {"instruction": "Keep right at the traffic light past the fast food restaurant onto Evans Road.", "action": "fork_right", "lc": "no", "landmarks": ["fast_food_restaurant", "traffic_light"]}, "claude-sonnet-4.6": {"instruction": "Bear slight right onto Evans Rd at the traffic lights, past McDonald's on your left.", "action": "fork_right", "lc": "yes", "landmarks": ["traffic_light", "mcdonalds"]}, "claude-opus-4.6": {"instruction": "At the traffic lights past McDonald's on your left, bear slight right onto Evans Rd.", "action": "fork_right", "lc": "no", "landmarks": ["McDonalds", "traffic_light", "street_light"]}, "grok-4.1-fast": {"instruction": "Slight right onto Evans Rd past McDonald's at traffic lights.", "action": "turn_right", "lc": "no", "landmarks": ["mcdonalds", "traffic_light"]}, "grok-4.20-beta": {"instruction": "Slight right onto Evans Rd after McDonald's", "action": "turn_right", "lc": "no", "landmarks": ["mcdonalds"]}, "qwen3-vl-8b-instruct": {"instruction": "Slight right onto Evans Rd/State Route 20 after McDonald's", "action": "turn_right", "lc": "no", "landmarks": ["McDonald's"]}, "qwen2.5-vl-72b-instruct": {"instruction": "Slight right onto Evans Rd after McDonald's and traffic lights.", "action": "fork_right", "lc": "no", "landmarks": ["traffic_light", "McDonald's"]}, "Qwen2.5-VL-3B-Instruct": {"instruction": "Slight right onto Evans Rd/State Route 20, then turn left onto National Route 13.", "action": "turn_left", "lc": "yes", "landmarks": ["McDonald's", "Salisbury Recreation Reserve"]}}}];
+
+    let compareIdx = 0;
+    function initCompare() {
+      const models = Object.keys(COMPARE_DATA[0].models);
+      const selA = document.getElementById('model-a');
+      const selB = document.getElementById('model-b');
+      models.forEach(m => {
+        selA.innerHTML += `<option value="${m}">${m}</option>`;
+        selB.innerHTML += `<option value="${m}">${m}</option>`;
+      });
+      selB.selectedIndex = 1;
+      selA.onchange = selB.onchange = renderCompare;
+      renderCompare();
+    }
+
+    function nextSample() {
+      compareIdx = (compareIdx + 1) % COMPARE_DATA.length;
+      renderCompare();
+    }
+
+    function renderCompare() {
+      const sample = COMPARE_DATA[compareIdx];
+      const mA = document.getElementById('model-a').value;
+      const mB = document.getElementById('model-b').value;
+      document.getElementById('compare-nav').textContent = sample.nav;
+      document.getElementById('compare-gt').textContent = `"${sample.gt}"`;
+      document.getElementById('compare-frame').src = `images/${sample.id}_frame.jpg`;
+      document.getElementById('compare-map').src = `images/${sample.id}_map.png`;
+      document.getElementById('compare-label-a').textContent = mA;
+      document.getElementById('compare-label-b').textContent = mB;
+
+      [['a', mA], ['b', mB]].forEach(([side, model]) => {
+        const r = sample.models[model];
+        const instrEl = document.getElementById(`compare-instr-${side}`);
+        const metaEl = document.getElementById(`compare-meta-${side}`);
+        if (!r) {
+          instrEl.textContent = '(no result for this model)';
+          metaEl.innerHTML = '';
+          return;
+        }
+        instrEl.textContent = `"${r.instruction}"`;
+        const parts = [r.action, `LC: ${r.lc}`];
+        if (r.landmarks && r.landmarks.length) parts.push(r.landmarks.slice(0,3).join(', '));
+        metaEl.innerHTML = `<span style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;line-height:1.6;">${parts.join(' · ')}</span>`;
+      });
+    }
+
+    // Init everything
+    renderLeaderboard();
+    renderMetricBars();
+    initCompare();
+  </script>
+</body>
+</html>

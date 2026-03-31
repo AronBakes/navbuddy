@@ -1,0 +1,90 @@
+[project]
+name = "navbuddy"
+version = "0.1.0"
+description = "Generate VLM training data for road navigation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "NavBuddy Contributors"}
+]
+keywords = ["navigation", "vlm", "street-view", "machine-learning", "dataset"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    # CLI + config
+    "typer[all]>=0.9.0",
+    "pydantic>=2.0",
+    "rich>=13.0",
+    "python-dotenv>=1.0",
+    "PyYAML>=6.0",
+    # HTTP
+    "httpx>=0.25",
+    # Image processing
+    "Pillow>=10.0",
+    "opencv-python-headless>=4.8",
+    # Map rendering
+    "playwright>=1.40",
+]
+
+[project.optional-dependencies]
+eval   = ["openai>=1.0", "google-generativeai>=0.3", "rouge-score", "nltk"]
+train  = ["trl>=0.9", "peft>=0.10", "bitsandbytes>=0.43", "accelerate>=0.28"]
+serve  = ["vllm>=0.12.0"]
+cache  = ["upstash-redis>=1.0", "upstash-vector>=0.5.0"]
+dev    = [
+    "pytest>=7.0", "pytest-cov", "black", "ruff",
+    # Internal research deps (not needed for public tool)
+    "requests>=2.31.0",
+    "polyline>=2.0.0",
+    "pyshp>=2.3.1",
+    "shapely>=2.0.2",
+    "onnxruntime>=1.17",
+    "chromadb>=0.5.0",
+]
+all    = ["navbuddy[render,eval,train,serve,cache,dev]"]
+
+[project.scripts]
+navbuddy = "navbuddy.cli:main"
+
+# Note: CLI is now in navbuddy/cli.py (flat structure)
+# Old structure: navbuddy/cli/__init__.py
+
+[project.urls]
+Homepage = "https://github.com/AronBakes/navbuddy"
+Documentation = "https://github.com/AronBakes/navbuddy#readme"
+Repository = "https://github.com/AronBakes/navbuddy"
+Issues = "https://github.com/AronBakes/navbuddy/issues"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["navbuddy*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v"

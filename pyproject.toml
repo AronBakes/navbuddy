@@ -33,6 +33,9 @@ dependencies = [
     "opencv-python-headless>=4.8",
     # Map rendering
     "playwright>=1.40",
+    # Viewer API
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
 ]
 
 [project.optional-dependencies]

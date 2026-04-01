@@ -1053,7 +1053,7 @@
       </p>
       <div class="hero-actions">
         <a href="#" class="btn btn-primary"><i class="fas fa-file-lines"></i> Read Paper</a>
-        <a href="#" class="btn btn-outline"><i class="fab fa-github"></i> Code</a>
+        <a href="https://github.com/AronBakes/navbuddy" target="_blank" rel="noopener noreferrer" class="btn btn-outline"><i class="fab fa-github"></i> Code</a>
         <button class="btn btn-outline" onclick="openDatasetModal()"><i class="fas fa-database" aria-hidden="true"></i> Dataset</button>
       </div>
     </section>
@@ -1073,10 +1073,6 @@
           <div class="highlight-item">
             <i class="fas fa-road"></i>
             <span>Lane-level guidance with visible landmark references</span>
-          </div>
-          <div class="highlight-item">
-            <i class="fas fa-cloud-rain"></i>
-            <span>Robust under adverse weather and lighting conditions</span>
           </div>
           <div class="highlight-item">
             <i class="fas fa-database"></i>
@@ -1156,7 +1152,7 @@
 
         <p class="reveal reveal-d1" style="color:var(--text);margin-bottom:2rem;max-width:700px;line-height:1.7;">
           <strong style="color:var(--text-heading);">100</strong> navigation steps across
-          <strong style="color:var(--text-heading);">24</strong> frontier and open-weight models,
+          <strong style="color:var(--text-heading);">29</strong> frontier and open-weight models,
           <strong style="color:var(--text-heading);">4</strong> input modalities, and
           <strong style="color:var(--text-heading);">4</strong> Australian cities.
           All metrics computed on image+prior modality against human-verified ground truth.
@@ -1164,16 +1160,16 @@
 
         <!-- Leaderboard table -->
         <div class="reveal reveal-d2" style="overflow-x:auto; margin-bottom: 2.5rem;">
-          <table id="leaderboard" style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+          <table id="leaderboard" style="width:100%; border-collapse:collapse;">
             <thead>
-              <tr style="border-bottom:1px solid var(--border);">
-                <th style="text-align:left;padding:0.6rem 0.8rem;color:var(--text-heading);cursor:pointer;white-space:nowrap;" onclick="sortTable(0)">Model <i class="fas fa-sort" style="font-size:0.6rem;opacity:0.4;"></i></th>
-                <th style="text-align:right;padding:0.6rem 0.5rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;" onclick="sortTable(1)">Lat.</th>
-                <th style="text-align:right;padding:0.6rem 0.5rem;color:#3B82F6;cursor:pointer;white-space:nowrap;" onclick="sortTable(2)">BERT F1</th>
-                <th style="text-align:right;padding:0.6rem 0.5rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;" onclick="sortTable(3)">LC F1</th>
-                <th style="text-align:right;padding:0.6rem 0.5rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;" onclick="sortTable(4)">Act.</th>
-                <th style="text-align:right;padding:0.6rem 0.5rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;" onclick="sortTable(5)">Ln MAE</th>
-                <th style="text-align:right;padding:0.6rem 0.5rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;" onclick="sortTable(6)">Len.</th>
+              <tr style="border-bottom:2px solid var(--border);">
+                <th style="text-align:left;padding:0.7rem 0.8rem;color:var(--text-heading);cursor:pointer;white-space:nowrap;font-size:0.8rem;font-weight:600;" onclick="sortTable(0)">Model <i class="fas fa-sort" style="font-size:0.55rem;opacity:0.3;margin-left:2px;"></i></th>
+                <th style="text-align:right;padding:0.7rem 0.6rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;font-size:0.75rem;font-weight:500;" onclick="sortTable(1)">Latency</th>
+                <th style="text-align:right;padding:0.7rem 0.6rem;color:#3B82F6;cursor:pointer;white-space:nowrap;font-size:0.75rem;font-weight:600;" onclick="sortTable(2)">BERT F1 <i class="fas fa-sort" style="font-size:0.5rem;opacity:0.3;"></i></th>
+                <th style="text-align:right;padding:0.7rem 0.6rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;font-size:0.75rem;font-weight:500;" onclick="sortTable(3)">LC F1 <i class="fas fa-sort" style="font-size:0.5rem;opacity:0.3;"></i></th>
+                <th style="text-align:right;padding:0.7rem 0.6rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;font-size:0.75rem;font-weight:500;" onclick="sortTable(4)">Action <i class="fas fa-sort" style="font-size:0.5rem;opacity:0.3;"></i></th>
+                <th style="text-align:right;padding:0.7rem 0.6rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;font-size:0.75rem;font-weight:500;" onclick="sortTable(5)">Ln MAE <i class="fas fa-sort" style="font-size:0.5rem;opacity:0.3;"></i></th>
+                <th style="text-align:right;padding:0.7rem 0.6rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;font-size:0.75rem;font-weight:500;" onclick="sortTable(6)">Words</th>
               </tr>
             </thead>
             <tbody id="leaderboard-body"></tbody>
@@ -1183,13 +1179,13 @@
         <!-- Metric bar chart with dropdowns -->
         <div class="reveal" style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
           <h3 style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:600;color:var(--text-heading);margin:0;">Model Ranking</h3>
-          <select id="bar-metric" onchange="renderMetricBars();document.getElementById('bar-modality').style.display=this.value==='bs'?'':'none'" style="padding:0.35rem 0.6rem;background:var(--bg);color:var(--text-heading);border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:'Outfit',sans-serif;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238796a8%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;">
+          <select id="bar-metric" onchange="renderMetricBars()" style="padding:0.35rem 0.6rem;background:var(--bg);color:var(--text-heading);border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:'Outfit',sans-serif;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238796a8%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;">
             <option value="act">Action Accuracy</option>
             <option value="lc">Lane Change F1</option>
             <option value="bs">BERTScore F1</option>
             <option value="ln">Lane Count MAE</option>
           </select>
-          <select id="bar-modality" onchange="renderMetricBars()" style="display:none;padding:0.35rem 0.6rem;background:var(--bg);color:var(--text-heading);border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:'Outfit',sans-serif;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238796a8%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;">
+          <select id="bar-modality" onchange="renderMetricBars()" style="padding:0.35rem 0.6rem;background:var(--bg);color:var(--text-heading);border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:'Outfit',sans-serif;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238796a8%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;">
             <option value="ip">Image + Prior</option>
             <option value="vp">Video + Prior</option>
             <option value="p">Prior Only</option>
@@ -1326,8 +1322,8 @@
     <div class="footer-nav">
       <a href="#abstract">Abstract</a>
       <a href="#pipeline">Method</a>
-      <a href="#augmentations">Robustness</a>
-      <a href="#resources">Resources</a>
+      <a href="#augmentations">Results</a>
+      <a href="#compare">Compare</a>
       <a href="#citation">Citation</a>
     </div>
     <p>&copy; 2026 <a href="#">Aron Bakes</a> &middot; Queensland University of Technology</p>
@@ -1461,68 +1457,75 @@
       return '';
     }
 
-    const LB_DATA = [
-      // BERTScore: rescale_with_baseline=True, roberta-large, GT-100 deduped
-      // params: active parameters in billions (est. = community estimate for closed models)
-      // Frontier — OpenAI
-      {m:"GPT-4o-mini",lat:9.4,params:8,ip:0.617,vp:0.609,p:0.592,ap:0.603,lc:0.577,act:0.680,ln:1.82,len:9.8},
-      {m:"GPT-4.1",lat:4.8,params:200,ip:0.446,vp:null,p:0.590,ap:0.374,lc:0.683,act:0.768,ln:2.45,len:13.4},
-      {m:"GPT-4.1-mini",lat:20.3,params:70,ip:0.560,vp:0.532,p:0.573,ap:0.556,lc:0.667,act:0.778,ln:2.04,len:12.6},
-      {m:"GPT-4.1-nano",lat:3.8,params:8,ip:0.490,vp:null,p:0.507,ap:0.478,lc:0.349,act:0.667,ln:1.57,len:14.3},
-      {m:"GPT-5.4",lat:4.1,params:200,ip:0.549,vp:0.518,p:0.553,ap:0.546,lc:0.674,act:0.710,ln:2.26,len:13.6},
-      {m:"GPT-5.4-mini",lat:11.9,params:70,ip:0.521,vp:0.539,p:0.572,ap:0.519,lc:0.649,act:0.758,ln:2.33,len:12.3},
-      {m:"GPT-5.4-nano",lat:11.6,params:8,ip:0.502,vp:0.502,p:0.514,ap:0.501,lc:0.526,act:0.727,ln:1.72,len:15.6},
-      {m:"GPT-5.2-codex",lat:5.5,params:200,ip:0.561,vp:0.516,p:0.579,ap:0.530,lc:0.659,act:0.770,ln:2.14,len:13.7},
-      {m:"GPT-5.1-codex-mini",lat:8.3,params:70,ip:0.490,vp:0.371,p:0.439,ap:0.503,lc:0.612,act:0.697,ln:2.27,len:14.1},
-      // Frontier — Google
-      {m:"Gemini 3 Flash",lat:9.3,params:30,ip:0.546,vp:0.568,p:0.521,ap:0.552,lc:0.421,act:0.740,ln:2.26,len:14.7},
-      {m:"Gemini 3.1 Pro",lat:23.5,params:175,ip:0.560,vp:0.548,p:0.565,ap:0.527,lc:0.623,act:0.750,ln:1.92,len:12.6},
-      {m:"Gemini 3.1 Flash Lite",lat:7.8,params:8,ip:0.573,vp:0.575,p:0.549,ap:0.572,lc:0.507,act:0.747,ln:2.18,len:12.9},
-      // Frontier — Anthropic
-      {m:"Claude Sonnet 4.6",lat:8.8,params:70,ip:0.576,vp:0.575,p:0.510,ap:0.562,lc:0.644,act:0.727,ln:2.28,len:12.1},
-      {m:"Claude Sonnet 4.5",lat:11.9,params:70,ip:0.527,vp:0.593,p:0.476,ap:0.534,lc:0.583,act:0.784,ln:2.18,len:11.0},
-      {m:"Claude Sonnet 4",lat:7.8,params:70,ip:0.529,vp:0.492,p:0.494,ap:0.537,lc:0.444,act:0.750,ln:2.91,len:9.8},
-      {m:"Claude Opus 4.6",lat:8.0,params:200,ip:0.554,vp:0.540,p:0.465,ap:0.538,lc:0.640,act:0.760,ln:2.28,len:15.3},
-      {m:"Claude Opus 4.5",lat:8.4,params:200,ip:0.505,vp:0.509,p:0.412,ap:0.516,lc:0.600,act:0.795,ln:2.18,len:14.5},
-      {m:"Claude Opus 4.1",lat:10.4,params:200,ip:0.553,vp:0.497,p:0.445,ap:0.562,lc:0.600,act:0.861,ln:2.67,len:9.0},
-      {m:"Claude Opus 4",lat:13.0,params:200,ip:0.492,vp:0.481,p:0.484,ap:0.561,lc:0.556,act:0.792,ln:2.00,len:9.2},
-      {m:"Claude Haiku 4.5",lat:7.6,params:8,ip:0.578,vp:0.569,p:0.536,ap:0.551,lc:0.667,act:0.727,ln:2.20,len:10.7},
-      {m:"Claude 3 Haiku",lat:6.3,params:8,ip:0.477,vp:0.504,p:0.562,ap:0.473,lc:0.563,act:0.687,ln:2.08,len:15.8},
-      // Frontier — xAI
-      {m:"Grok 4.1 Fast",lat:23.6,params:175,ip:0.585,vp:0.579,p:0.549,ap:0.575,lc:0.567,act:0.717,ln:1.96,len:9.2},
-      {m:"Grok 4.20",lat:4.4,params:175,ip:0.597,vp:0.613,p:0.620,ap:0.575,lc:0.304,act:0.768,ln:2.43,len:8.1},
-      {m:"Grok 4 Fast",lat:23.5,params:175,ip:0.570,vp:0.585,p:0.532,ap:0.578,lc:0.541,act:0.660,ln:2.14,len:10.1},
-      // Open-weight — Qwen
-      {m:"Qwen3-VL-8B",lat:7.8,params:8,ip:0.549,vp:0.591,p:0.542,ap:0.550,lc:0.415,act:0.788,ln:2.20,len:11.1},
-      {m:"Qwen3-VL-32B",lat:5.4,params:32,ip:0.541,vp:0.405,p:0.543,ap:0.410,lc:0.602,act:0.737,ln:2.33,len:14.1},
-      {m:"Qwen2.5-VL-72B",lat:5.6,params:72,ip:0.577,vp:0.575,p:0.562,ap:0.474,lc:0.608,act:0.670,ln:2.26,len:11.0},
-      {m:"Qwen2.5-VL-3B",lat:2.5,params:3,ip:0.499,vp:null,p:null,ap:null,lc:0.384,act:0.470,ln:1.98,len:11.6},
-      {m:"Qwen3.5-Flash",lat:30.8,params:3,ip:0.536,vp:null,p:0.461,ap:0.453,lc:0.667,act:0.677,ln:2.23,len:12.1},
-    ];
+    let LB_DATA = [];
+
+    // Load eval data from data/eval.json
+    fetch('data/eval.json')
+      .then(r => r.json())
+      .then(data => {
+        LB_DATA = data.models;
+        // Recompute best values and re-render
+        ['ip','ip_lc','ip_act'].forEach(k => {
+          best[k] = Math.max(...LB_DATA.map(r => r[k]||0));
+        });
+        best.ip_ln = Math.min(...LB_DATA.filter(r => r.ip_ln != null).map(r => r.ip_ln));
+        renderLeaderboard();
+        renderMetricBars();
+      })
+      .catch(() => console.warn('Could not load data/eval.json'));
 
     // Find best per column (higher=better except ln=lower)
     const best = {};
-    ['ip','lc','act'].forEach(k => {
+    ['ip','ip_lc','ip_act'].forEach(k => {
       best[k] = Math.max(...LB_DATA.map(r => r[k]||0));
     });
-    best.ln = Math.min(...LB_DATA.map(r => r.ln));
+    best.ip_ln = Math.min(...LB_DATA.filter(r => r.ip_ln != null).map(r => r.ip_ln));
+
+    // Score color: green for good, default for mid, dim for poor
+    function scoreColor(v, best, worst, lowerBetter) {
+      if (v === null || v === undefined) return 'var(--text-muted)';
+      const range = Math.abs(best - worst) || 1;
+      const ratio = lowerBetter ? (worst - v) / range : (v - worst) / range;
+      if (ratio > 0.8) return '#22c55e';  // top 20%
+      if (ratio > 0.5) return 'var(--text-heading)';
+      if (ratio > 0.25) return 'var(--text)';
+      return 'var(--text-muted)';
+    }
 
     function renderLeaderboard() {
+      // Compute ranges for color coding
+      const ranges = {};
+      ['ip','ip_lc','ip_act'].forEach(k => {
+        const vals = LB_DATA.map(r => r[k]).filter(v => v != null);
+        ranges[k] = {best: Math.max(...vals), worst: Math.min(...vals), lower: false};
+      });
+      const lnVals = LB_DATA.map(r => r.ip_ln).filter(v => v != null);
+      ranges.ip_ln = {best: Math.min(...lnVals), worst: Math.max(...lnVals), lower: true};
+
       const tbody = document.getElementById('leaderboard-body');
       tbody.innerHTML = LB_DATA.map(r => {
         const pc = PROVIDER_COLORS[providerOf(r.m)] || 'var(--text-muted)';
         const cell = (v, k) => {
-          if (v === null || v === undefined) return '<td style="text-align:right;padding:0.5rem;color:var(--text-muted);">—</td>';
+          if (v === null || v === undefined) return '<td style="text-align:right;padding:0.55rem 0.6rem;color:var(--text-muted);font-size:0.82rem;">—</td>';
           const isBest = v === best[k];
-          const bold = isBest ? 'font-weight:700;color:var(--text-heading);' : '';
-          return `<td style="text-align:right;padding:0.5rem;font-family:monospace;font-size:0.78rem;${bold}">${v.toFixed(3)}</td>`;
+          const {best:b, worst:w, lower} = ranges[k] || {};
+          const color = scoreColor(v, b, w, lower);
+          const bold = isBest ? 'font-weight:700;' : '';
+          return `<td style="text-align:right;padding:0.55rem 0.6rem;font-family:monospace;font-size:0.82rem;color:${color};${bold}">${v.toFixed(3)}</td>`;
         };
+        const lnCell = r.ip_ln != null
+          ? (() => {
+              const color = scoreColor(r.ip_ln, ranges.ip_ln.best, ranges.ip_ln.worst, true);
+              const bold = r.ip_ln === best.ip_ln ? 'font-weight:700;' : '';
+              return `<td style="text-align:right;padding:0.55rem 0.6rem;font-family:monospace;font-size:0.82rem;color:${color};${bold}">${r.ip_ln.toFixed(2)}</td>`;
+            })()
+          : '<td style="text-align:right;padding:0.55rem 0.6rem;color:var(--text-muted);font-size:0.82rem;">—</td>';
         return `<tr style="border-bottom:1px solid var(--border);transition:background 0.15s;" onmouseenter="this.style.background='var(--bg-alt)'" onmouseleave="this.style.background=''">
-          <td style="padding:0.5rem 0.8rem;white-space:nowrap;"><span style="display:inline-block;width:3px;height:14px;border-radius:2px;background:${pc};margin-right:8px;vertical-align:middle;"></span>${r.m}</td>
-          <td style="text-align:right;padding:0.5rem;color:var(--text-muted);font-size:0.78rem;">${r.lat}s</td>
-          ${cell(r.ip,'ip')}${cell(r.lc,'lc')}${cell(r.act,'act')}
-          <td style="text-align:right;padding:0.5rem;font-family:monospace;font-size:0.78rem;${r.ln===best.ln?'font-weight:700;color:var(--text-heading);':''}">${r.ln.toFixed(2)}</td>
-          <td style="text-align:right;padding:0.5rem;color:var(--text-muted);font-size:0.78rem;">${r.len}</td>
+          <td style="padding:0.55rem 0.8rem;white-space:nowrap;font-size:0.85rem;"><span style="display:inline-block;width:3px;height:14px;border-radius:2px;background:${pc};margin-right:8px;vertical-align:middle;"></span>${r.m}</td>
+          <td style="text-align:right;padding:0.55rem 0.6rem;color:var(--text-muted);font-size:0.82rem;font-family:monospace;">${r.lat}s</td>
+          ${cell(r.ip,'ip')}${cell(r.ip_lc,'ip_lc')}${cell(r.ip_act,'ip_act')}
+          ${lnCell}
+          <td style="text-align:right;padding:0.55rem 0.6rem;color:var(--text-muted);font-size:0.82rem;font-family:monospace;">${r.len}</td>
         </tr>`;
       }).join('');
     }
@@ -1531,7 +1534,7 @@
     function sortTable(col) {
       if (sortCol === col) sortAsc = !sortAsc;
       else { sortCol = col; sortAsc = col === 0 ? true : false; }
-      const keys = ['m','lat','ip','lc','act','ln','len'];
+      const keys = ['m','lat','ip','ip_lc','ip_act','ip_ln','len'];
       const k = keys[col];
       LB_DATA.sort((a,b) => {
         let va = a[k], vb = b[k];
@@ -1543,18 +1546,18 @@
     }
 
     // Unified metric bar chart with modality support
+    // Keys: BERTScore = ip/vp/p/ap, others = {mod}_{metric} e.g. ip_act, vp_lc, ap_ln
     function renderMetricBars() {
       const metric = document.getElementById('bar-metric').value;
-      const modality = document.getElementById('bar-modality').value;
-      const key = metric === 'bs' ? modality : metric;
+      const mod = document.getElementById('bar-modality').value;
+      const key = metric === 'bs' ? mod : mod + '_' + metric;
       const isBs = metric === 'bs';
+      const isLn = metric === 'ln';
       const filtered = LB_DATA.filter(r => r[key] != null);
       if (!filtered.length) {
         document.getElementById('metric-bars').innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;">No data for this combination</div>';
         return;
       }
-      const isLn = key === 'ln';
-      // ln: lower = better, sort ascending; others: higher = better, sort descending
       const sorted = [...filtered].sort((a,b) => isLn ? a[key] - b[key] : b[key] - a[key]);
       const maxVal = Math.max(...sorted.map(r => r[key]));
       const minVal = Math.min(...sorted.map(r => r[key]));
@@ -1562,12 +1565,12 @@
       document.getElementById('metric-bars').innerHTML = sorted.map(r => {
         const pc = PROVIDER_COLORS[providerOf(r.m)] || '#888';
         const w = isLn ? (maxVal > 0 ? ((maxVal - r[key] + minVal) / maxVal * 100).toFixed(1) : '0') : (maxVal > 0 ? (r[key] / maxVal * 100).toFixed(1) : '0');
-        return `<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem;">
-          <div style="width:140px;text-align:right;font-size:0.75rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.m}</div>
-          <div style="flex:1;height:18px;background:var(--bg);border-radius:4px;overflow:hidden;position:relative;">
-            <div style="height:100%;width:${w}%;background:${pc};border-radius:4px;"></div>
+        return `<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.4rem;">
+          <div style="width:160px;text-align:right;font-size:0.8rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.m}</div>
+          <div style="flex:1;height:22px;background:var(--bg);border-radius:4px;overflow:hidden;position:relative;">
+            <div style="height:100%;width:${w}%;background:${pc};border-radius:4px;opacity:0.8;"></div>
           </div>
-          <div style="width:48px;text-align:right;font-size:0.72rem;font-family:monospace;color:var(--text);">${fmt(r[key])}</div>
+          <div style="width:52px;text-align:right;font-size:0.78rem;font-family:monospace;color:var(--text-heading);">${fmt(r[key])}</div>
         </div>`;
       }).join('');
     }

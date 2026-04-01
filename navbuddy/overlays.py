@@ -41,8 +41,12 @@ MANEUVER_ICONS = {
     "TURN_SHARP_RIGHT": "turn_sharp_right",
     "UTURN_LEFT": "u_turn_left",
     "UTURN_RIGHT": "u_turn_right",
-    "KEEP_LEFT": "keep_left",
-    "KEEP_RIGHT": "keep_right",
+    "KEEP_LEFT": "turn_slight_left",
+    "KEEP_RIGHT": "turn_slight_right",
+    "STAY_LEFT": "turn_slight_left",
+    "STAY_RIGHT": "turn_slight_right",
+    "SLIGHT_LEFT": "turn_slight_left",
+    "SLIGHT_RIGHT": "turn_slight_right",
     "RAMP_LEFT": "ramp_left",
     "RAMP_RIGHT": "ramp_right",
     "MERGE": "merge",
@@ -511,9 +515,9 @@ def overlay_nav_eta_html(
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": w, "height": h}, device_scale_factor=device_scale_factor)
-        page.set_content(html)
+        page.set_content(html, wait_until="networkidle")
         page.evaluate("(document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve()")
-        page.wait_for_timeout(300)
+        page.wait_for_timeout(500)
         element = page.locator("#wrap")
         element.screenshot(path=str(output), type="png")
         browser.close()

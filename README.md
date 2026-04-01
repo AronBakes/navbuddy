@@ -24,7 +24,15 @@ source .venv/bin/activate
 
 ### Download NavBuddy-100
 
-Requires a [Google Maps API key](https://developers.google.com/maps/documentation/streetview/get-api-key) with Street View Static API enabled.
+Requires a [Google Maps API key](https://console.cloud.google.com/apis/credentials) with the following APIs enabled:
+
+| API | Required for | Enable at |
+|-----|-------------|-----------|
+| **Street View Static API** | `navbuddy setup`, frame download | [Enable](https://console.cloud.google.com/apis/library/street-view-image-backend.googleapis.com) |
+| **Directions API** | `navbuddy generate` (new routes) | [Enable](https://console.cloud.google.com/apis/library/directions-backend.googleapis.com) |
+| **Geocoding API** | `navbuddy geocode` (address lookup) | [Enable](https://console.cloud.google.com/apis/library/geocoding-backend.googleapis.com) |
+
+For **NavBuddy-100 only** (no route generation), you just need **Street View Static API**.
 
 ```bash
 navbuddy setup

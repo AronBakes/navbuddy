@@ -47,8 +47,8 @@ def setup(
     output_dir: Path = typer.Option(
         Path("./data"), "--output-dir", "-O", help="Output directory"
     ),
-    frame_profile: str = typer.Option(
-        "manifest", "--frame-profile",
+    frame_profile: Optional[str] = typer.Option(
+        None, "--frame-profile",
         help="Download profile: manifest (1 frame/step, ~$0.70) or sparse4 (4 frames/step, ~$2.72)",
     ),
     skip_maps: bool = typer.Option(
@@ -73,14 +73,14 @@ def setup(
     import zipfile
     import urllib.request
 
-    MAPS_URL = "https://github.com/AronBakes/navbuddy/releases/download/v0.1.0/navbuddy100_maps.zip"
+    MAPS_URL = "https://github.com/AronBakes/navbuddy/releases/download/v0.2.0/navbuddy100_maps.zip"
 
     # ── Find manifest ──
-    manifest_path = Path(__file__).parent.parent / "manifests" / "navbuddy100.json"
+    manifest_path = Path(__file__).parent.parent / "data" / "navbuddy100_manifest.json"
     if not manifest_path.exists():
-        manifest_path = Path("manifests/navbuddy100.json")
+        manifest_path = Path("data/navbuddy100_manifest.json")
     if not manifest_path.exists():
-        console.print("[red]Cannot find manifests/navbuddy100.json[/red]")
+        console.print("[red]Cannot find data/navbuddy100_manifest.json[/red]")
         console.print("Run this command from the navbuddy repo root, or install via: pip install navbuddy")
         raise typer.Exit(1)
 
@@ -91,7 +91,7 @@ def setup(
         console.print("[bold]Google Maps API Key[/bold]")
         console.print("  NavBuddy downloads Street View imagery using the Google Maps API.")
         console.print("  Get a key at: [blue]https://developers.google.com/maps/documentation/streetview/get-api-key[/blue]")
-        console.print("  Enable: [dim]Street View Static API, Directions API, Geocoding API[/dim]")
+        console.print("  Enable: [dim]Street View Static API[/dim] (Directions API only needed for navbuddy generate)")
         console.print()
         key = typer.prompt("Enter your Google Maps API key")
         if not key or not key.strip():
@@ -111,6 +111,16 @@ def setup(
         if "REQUEST_DENIED" in str(e):
             console.print(f"[red]API key validation failed: {e}[/red]")
             raise typer.Exit(1)
+
+    # ── Choose frame profile (prompt if not set via flag) ──
+    if frame_profile is None:
+        console.print()
+        console.print("[bold]Frame download profile[/bold]")
+        console.print("  [dim]1)[/dim] Single frame per step — 100 images, ~$0.70  [dim](recommended)[/dim]")
+        console.print("  [dim]2)[/dim] Sparse4 (4 frames per step) — 389 images, ~$2.73  [dim](for video+prior eval)[/dim]")
+        console.print()
+        choice = typer.prompt("Choose profile", default="1")
+        frame_profile = "sparse4" if choice.strip() in ("2", "sparse4") else "manifest"
 
     # ── Cost estimate ──
     frames_count = 100 if frame_profile == "manifest" else 389
@@ -165,7 +175,7 @@ def setup(
                 console.print(f" {extracted} maps extracted")
             except Exception as e:
                 console.print(f"\n[yellow]  Maps download failed: {e}[/yellow]")
-                console.print("[dim]  You can render maps later with: navbuddy download-manifest -m manifests/navbuddy100.json --render-maps[/dim]")
+                console.print("[dim]  You can render maps later with: navbuddy download-manifest -m data/navbuddy100_manifest.json --render-maps[/dim]")
 
     # ── Download frames ──
     from navbuddy.manifest import download_from_manifest
@@ -190,7 +200,90 @@ def setup(
     console.print()
     console.print("[dim]Next steps:[/dim]")
     console.print(f"  navbuddy stats -d {output_dir}")
+    console.print(f"  navbuddy browse -d {output_dir}")
     console.print(f"  navbuddy evaluate -d {output_dir}/samples.jsonl -m google/gemini-3-flash-preview -n 5")
+
+
+@app.command(rich_help_panel="Setup")
+def browse(
+    data_dir: Path = typer.Option(
+        Path("./data"), "--data-dir", "-d", help="Data directory"
+    ),
+    port: int = typer.Option(8765, "--port", "-p", help="API server port"),
+    no_open: bool = typer.Option(False, "--no-open", help="Don't open browser"),
+):
+    """Launch the NavBuddy-100 sample viewer.
+
+    Starts a local API server and opens the dashboard in your browser.
+
+    Examples:
+        navbuddy browse
+        navbuddy browse -d ./data -p 8765
+    """
+    import subprocess
+    import webbrowser
+
+    if not data_dir.exists():
+        console.print(f"[red]Data directory not found: {data_dir}[/red]")
+        console.print("Run [bold]navbuddy setup[/bold] first to download the dataset.")
+        raise typer.Exit(1)
+
+    # Check for dashboard
+    dashboard_dir = Path(__file__).parent.parent / "dashboard"
+    has_dashboard = (dashboard_dir / "package.json").exists()
+
+    console.print(f"[bold]NavBuddy-100 Viewer[/bold]")
+    console.print(f"  Data: {data_dir.resolve()}")
+    console.print(f"  API:  http://localhost:{port}")
+
+    if has_dashboard:
+        console.print(f"  UI:   http://localhost:3000")
+        console.print()
+        console.print("[dim]Starting dashboard frontend...[/dim]")
+        try:
+            # Install deps if needed
+            if not (dashboard_dir / "node_modules").exists():
+                console.print("[dim]  Installing dashboard dependencies...[/dim]")
+                subprocess.run(
+                    ["npm", "install"],
+                    cwd=str(dashboard_dir),
+                    capture_output=True,
+                    timeout=120,
+                )
+            # Start Next.js dev server in background
+            frontend = subprocess.Popen(
+                ["npx", "next", "dev", "--turbopack", "-p", "3000"],
+                cwd=str(dashboard_dir),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except Exception as e:
+            console.print(f"[yellow]  Dashboard frontend failed: {e}[/yellow]")
+            console.print("[dim]  API-only mode — use curl or the dashboard separately.[/dim]")
+            frontend = None
+            has_dashboard = False
+    else:
+        console.print()
+        frontend = None
+
+    if not no_open and has_dashboard:
+        import time
+        time.sleep(2)  # Give Next.js a moment to start
+        webbrowser.open(f"http://localhost:3000")
+
+    # Start API server (blocking)
+    try:
+        import uvicorn
+        from navbuddy.api.main import create_app
+
+        api_app = create_app(data_root=data_dir.resolve())
+        uvicorn.run(api_app, host="0.0.0.0", port=port, log_level="warning")
+    except ImportError:
+        console.print("[red]uvicorn not installed. Run: pip install uvicorn[/red]")
+        raise typer.Exit(1)
+    finally:
+        if frontend:
+            frontend.terminate()
 
 
 @app.command(rich_help_panel="Utilities")

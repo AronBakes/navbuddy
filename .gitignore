@@ -60,6 +60,9 @@ weights/
 data/frames/
 data/maps/
 data/augments/
+data/routes/
+data/samples.jsonl
+data/manifest.json
 
 # Prevent stray result files in repo root
 /results_*.jsonl
@@ -95,6 +98,7 @@ test-results/
 dashboard/.next/
 dashboard/node_modules/
 dashboard/undefined:/
+dashboard/next-env.d.ts
 
 # Temporary files
 tmp/

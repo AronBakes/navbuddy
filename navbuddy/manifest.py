@@ -7,9 +7,9 @@ Users can download images using their own Google Maps API key.
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from navbuddy.polylines import pose_from_polyline
 from navbuddy.sampling import FRAME_PROFILES, SPARSE4_TARGETS_REMAINING_M, clamp_targets, profile_distances
 from navbuddy.utils import generate_frame_filename
@@ -44,7 +44,19 @@ class ManifestStep(BaseModel):
     end_lng: float = 0.0
     heading: Optional[float] = None
     frames: List[ManifestFrame] = Field(default_factory=list)
+    # New manifest format: single frame + sparse4 list
+    frame: Optional[ManifestFrame] = None
+    sparse4_frames: Optional[List[ManifestFrame]] = None
     osm_road: Optional[Dict[str, Any]] = None
+
+    @model_validator(mode="after")
+    def _populate_frames(self) -> "ManifestStep":
+        """If frames is empty but frame/sparse4_frames are set, populate frames."""
+        if not self.frames and self.sparse4_frames:
+            self.frames = list(self.sparse4_frames)
+        elif not self.frames and self.frame:
+            self.frames = [self.frame]
+        return self
 
 
 class ManifestRoute(BaseModel):
@@ -73,7 +85,7 @@ class DatasetManifest(BaseModel):
     # Stats
     routes_count: int = 0
     samples_count: int = 0
-    total_frames: int = 0
+    total_frames: Union[int, Dict[str, int]] = 0
 
     # Download info
     download_instructions: str = """

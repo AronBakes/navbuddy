@@ -330,26 +330,26 @@ def generate_route(
         map_path = maps_dir / map_filename
         map_generated = False
 
-        # Prefer a near-maneuver map pose: 20m from step end,
-        # or midpoint for short steps (<40m).
+        # Car position: use the last (closest to maneuver) frame position.
         car_lat = None
         car_lng = None
         car_heading = None
-        step_poly = step.get("polyline", {})
-        step_polyline = step_poly.get("encodedPolyline5") or step_poly.get("encodedPolyline", "")
-        step_distance_m = float(step.get("distanceMeters", 0) or 0)
-        if step_polyline and step_distance_m > 0:
-            target_from_end = (step_distance_m / 2.0) if step_distance_m < 40.0 else 20.0
-            pose = pose_from_polyline(step_polyline, target_from_end)
-            if pose:
-                car_lat, car_lng, car_heading = pose
+        if frame_params:
+            last_frame = frame_params[-1]
+            car_lat = last_frame.lat
+            car_lng = last_frame.lng
+            car_heading = last_frame.heading
 
-        # Fallback to first sampled frame if available.
+        # Fallback to polyline interpolation if no frames.
         if car_lat is None or car_lng is None or car_heading is None:
-            if frame_params:
-                car_lat = frame_params[0].lat
-                car_lng = frame_params[0].lng
-                car_heading = frame_params[0].heading
+            step_poly = step.get("polyline", {})
+            step_polyline = step_poly.get("encodedPolyline5") or step_poly.get("encodedPolyline", "")
+            step_distance_m = float(step.get("distanceMeters", 0) or 0)
+            if step_polyline and step_distance_m > 0:
+                target_from_end = min(40.0, step_distance_m / 2.0)
+                pose = pose_from_polyline(step_polyline, target_from_end)
+                if pose:
+                    car_lat, car_lng, car_heading = pose
 
         log(f"  Generating OSM overhead map...")
         success = generate_step_map_osm(
@@ -394,7 +394,7 @@ def generate_route(
             try:
                 from PIL import Image
                 _map_img = Image.open(map_path)
-                overlay_scale = 2.1 * (_map_img.height / 2400.0)
+                overlay_scale = 1.4
                 _map_img.close()
             except Exception:
                 overlay_scale = 0.7
@@ -406,6 +406,7 @@ def generate_route(
                     distance_km=remaining_km,
                     use_playwright=True,
                     overlay_scale=overlay_scale,
+                    device_scale_factor=1,
                 )
             except Exception as e:
                 log(f"  Warning: Failed to add overlay: {e}")

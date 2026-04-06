@@ -536,6 +536,7 @@ def add_overlay_to_map(
     out_path: Optional[Path] = None,
     use_playwright: bool = True,
     overlay_scale: float = 1.0,
+    device_scale_factor: int = 2,
 ) -> Path:
     """Add navigation overlay to a map image.
 
@@ -563,6 +564,7 @@ def add_overlay_to_map(
             distance_km=distance_km,
             out_path=out_path,
             overlay_scale=overlay_scale,
+            device_scale_factor=device_scale_factor,
         )
     else:
         return overlay_nav_eta_pil(

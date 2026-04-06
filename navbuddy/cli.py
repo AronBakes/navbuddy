@@ -452,7 +452,7 @@ def generate(
         "osm", "--map-renderer", help="Map renderer: 'osm' (default, Playwright + Leaflet) or 'google' (Static Maps API)"
     ),
     car_icon: str = typer.Option(
-        "cybertruck", "--car-icon", help="Car icon: 'cybertruck' (default), 'arrow', 'f1', 'model3', 'wrx'"
+        "sedan", "--car-icon", help="Car icon: 'sedan' (default), 'arrow', 'cybertruck', 'f1', 'model3', 'wrx'"
     ),
     car_icon_scale: float = typer.Option(
         0.025, "--car-icon-scale", help="Scale factor for car icons (default 0.025, maintains aspect ratio)"

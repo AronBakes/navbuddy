@@ -154,13 +154,13 @@ def _generate_leaflet_html(
     end_lng: float,
     *,
     route_polyline_coords: Optional[List[Tuple[float, float]]] = None,
-    car_icon: str = "arrow",
+    car_icon: str = "sedan",
     car_icon_data_uri: Optional[str] = None,
     car_icon_width: int = 48,
     car_icon_height: int = 48,
     zoom: int = 18,
-    width: int = 640,
-    height: int = 400,
+    width: int = 1280,
+    height: int = 800,
     nav_instruction: Optional[str] = None,
     next_instruction: Optional[str] = None,
     remaining_distance_m: Optional[float] = None,
@@ -428,12 +428,12 @@ async def render_map_async(
     output_path: Path,
     *,
     route_polyline_coords: Optional[List[Tuple[float, float]]] = None,
-    car_icon: str = "arrow",
+    car_icon: str = "sedan",
     assets_dir: Optional[Path] = None,
     car_icon_scale: float = DEFAULT_CAR_ICON_SCALE,
     zoom: int = 18,
-    width: int = 640,
-    height: int = 400,
+    width: int = 1280,
+    height: int = 800,
     nav_instruction: Optional[str] = None,
     next_instruction: Optional[str] = None,
     remaining_distance_m: Optional[float] = None,
@@ -470,7 +470,9 @@ async def render_map_async(
     car_icon_width = 48  # default for arrow
     car_icon_height = 48
 
-    if car_icon != "arrow" and assets_dir:
+    if car_icon != "arrow":
+        if assets_dir is None:
+            assets_dir = Path(__file__).parent.parent / "assets"
         icon_filename = CAR_ICONS.get(car_icon)
         if icon_filename and icon_filename != "arrow":
             icon_path = assets_dir / icon_filename
@@ -564,7 +566,7 @@ def render_map(
     output_path: Path,
     *,
     route_polyline_coords: Optional[List[Tuple[float, float]]] = None,
-    car_icon: str = "arrow",
+    car_icon: str = "sedan",
     assets_dir: Optional[Path] = None,
     car_icon_scale: float = DEFAULT_CAR_ICON_SCALE,
     **kwargs,
@@ -590,12 +592,12 @@ def generate_step_map_osm(
     car_lng: Optional[float] = None,
     car_heading: Optional[float] = None,
     route_polyline: Optional[str] = None,
-    car_icon: str = "arrow",
+    car_icon: str = "sedan",
     assets_dir: Optional[Path] = None,
     car_icon_scale: float = DEFAULT_CAR_ICON_SCALE,
     zoom: int = 18,
-    width: int = 640,
-    height: int = 400,
+    width: int = 1280,
+    height: int = 800,
 ) -> bool:
     """Generate OSM overhead map for a route step.
 

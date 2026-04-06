@@ -48,7 +48,7 @@ def setup(
         Path("./data"), "--output-dir", "-O", help="Output directory"
     ),
     frame_profile: Optional[str] = typer.Option(
-        None, "--frame-profile",
+        None, "--profile",
         help="Download profile: manifest (1 frame/step, ~$0.70) or sparse4 (4 frames/step, ~$2.72)",
     ),
     skip_maps: bool = typer.Option(
@@ -89,9 +89,12 @@ def setup(
     if not key:
         console.print()
         console.print("[bold]Google Maps API Key[/bold]")
-        console.print("  NavBuddy downloads Street View imagery using the Google Maps API.")
         console.print("  Get a key at: [blue]https://developers.google.com/maps/documentation/streetview/get-api-key[/blue]")
-        console.print("  Enable: [dim]Street View Static API[/dim] (Directions API only needed for navbuddy generate)")
+        console.print()
+        console.print("  Enable these APIs on your key:")
+        console.print("    [bold cyan]Street View Static API[/bold cyan]  — downloads Street View frames  [dim](required)[/dim]")
+        console.print("    [bold cyan]Directions API[/bold cyan]          — route generation via [dim]navbuddy generate[/dim]")
+        console.print("    [bold cyan]Geocoding API[/bold cyan]           — address lookup via [dim]navbuddy geocode[/dim]")
         console.print()
         key = typer.prompt("Enter your Google Maps API key")
         if not key or not key.strip():
@@ -112,15 +115,71 @@ def setup(
             console.print(f"[red]API key validation failed: {e}[/red]")
             raise typer.Exit(1)
 
+    # ── Optional keys ──
+    openrouter_key = os.environ.get("OPENROUTER_API_KEY", "")
+    hf_token = os.environ.get("HF_TOKEN", "")
+
+    if not openrouter_key:
+        console.print()
+        console.print("[bold]OpenRouter API Key[/bold] [dim](for VLM benchmarking)[/dim]")
+        console.print("  Get one at: [blue]https://openrouter.ai/keys[/blue]")
+        openrouter_key = typer.prompt("Enter your OpenRouter API key (Enter to skip)", default="", show_default=False)
+        openrouter_key = openrouter_key.strip()
+
+    if not hf_token:
+        console.print()
+        console.print("[bold]HuggingFace Token[/bold] [dim](for gated models like Gemma, Llama)[/dim]")
+        console.print("  Get one at: [blue]https://huggingface.co/settings/tokens[/blue]")
+        hf_token = typer.prompt("Enter your HF token (Enter to skip)", default="", show_default=False)
+        hf_token = hf_token.strip()
+
+    # ── Save keys to .env ──
+    env_path = Path(".env")
+    env_vars: dict[str, str] = {}
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, _, v = line.partition("=")
+                env_vars[k.strip()] = v.strip()
+
+    env_vars["GOOGLE_MAPS_API_KEY"] = key
+    if openrouter_key:
+        env_vars["OPENROUTER_API_KEY"] = openrouter_key
+    if hf_token:
+        env_vars["HF_TOKEN"] = hf_token
+
+    env_path.write_text("\n".join(f"{k}={v}" for k, v in env_vars.items()) + "\n")
+    console.print()
+    console.print("[green]✓ Saved API keys to .env[/green]")
+
+    # ── Download NavBuddy-100? ──
+    console.print()
+    console.print("[bold]Download NavBuddy-100 benchmark?[/bold]")
+    console.print("  100 Street View samples across 4 Australian cities with ground-truth labels.")
+    console.print("  Required for [dim]navbuddy evaluate[/dim]. Skip if you only want to generate your own routes.")
+    console.print()
+    download_benchmark = typer.confirm("Download NavBuddy-100?", default=True)
+
+    if not download_benchmark:
+        console.print()
+        console.print("[green]✓ Setup complete![/green]")
+        console.print()
+        console.print("[dim]Next steps:[/dim]")
+        console.print("  navbuddy generate -o \"Sydney Opera House\" -d \"Bondi Beach\" -c sydney")
+        raise typer.Exit(0)
+
     # ── Choose frame profile (prompt if not set via flag) ──
     if frame_profile is None:
         console.print()
         console.print("[bold]Frame download profile[/bold]")
-        console.print("  [dim]1)[/dim] Single frame per step — 100 images, ~$0.70  [dim](recommended)[/dim]")
-        console.print("  [dim]2)[/dim] Sparse4 (4 frames per step) — 389 images, ~$2.73  [dim](for video+prior eval)[/dim]")
         console.print()
-        choice = typer.prompt("Choose profile", default="1")
-        frame_profile = "sparse4" if choice.strip() in ("2", "sparse4") else "manifest"
+        console.print("  [bold cyan]1[/bold cyan]  Single frame per step — 100 images, ~$0.70  [dim](recommended)[/dim]")
+        console.print("  [bold cyan]2[/bold cyan]  Sparse4 (4 frames per step) — 389 images, ~$2.73")
+        console.print()
+        from rich.prompt import Prompt
+        choice = Prompt.ask("  Select", choices=["1", "2"], default="1", show_default=False)
+        frame_profile = "sparse4" if choice == "2" else "manifest"
 
     # ── Cost estimate ──
     frames_count = 100 if frame_profile == "manifest" else 389
@@ -220,6 +279,7 @@ def browse(
         navbuddy browse
         navbuddy browse -d ./data -p 8765
     """
+    import os
     import subprocess
     import webbrowser
 
@@ -232,28 +292,42 @@ def browse(
     dashboard_dir = Path(__file__).parent.parent / "dashboard"
     has_dashboard = (dashboard_dir / "package.json").exists()
 
+    # Find available ports
+    import socket
+
+    def _find_port(start: int, end: int) -> int:
+        for _p in range(start, end):
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                if s.connect_ex(("localhost", _p)) != 0:
+                    return _p
+        return start
+
+    api_port = _find_port(port, port + 10)
+
     console.print(f"[bold]NavBuddy-100 Viewer[/bold]")
     console.print(f"  Data: {data_dir.resolve()}")
-    console.print(f"  API:  http://localhost:{port}")
+    console.print(f"  API:  http://localhost:{api_port}")
 
     if has_dashboard:
-        console.print(f"  UI:   http://localhost:3000")
+        frontend_port = _find_port(3000, 3010)
+        console.print(f"  UI:   http://localhost:{frontend_port}")
         console.print()
         console.print("[dim]Starting dashboard frontend...[/dim]")
         try:
             # Install deps if needed
             if not (dashboard_dir / "node_modules").exists():
-                console.print("[dim]  Installing dashboard dependencies...[/dim]")
+                console.print("[dim]  Installing dashboard dependencies (this may take a minute on first run)...[/dim]")
                 subprocess.run(
                     ["npm", "install"],
                     cwd=str(dashboard_dir),
-                    capture_output=True,
                     timeout=120,
                 )
             # Start Next.js dev server in background
+            next_env = {**os.environ, "NAVBUDDY_API_PORT": str(api_port)}
             frontend = subprocess.Popen(
-                ["npx", "next", "dev", "--turbopack", "-p", "3000"],
+                ["npx", "next", "dev", "--turbopack", "-p", str(frontend_port)],
                 cwd=str(dashboard_dir),
+                env=next_env,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
@@ -269,7 +343,7 @@ def browse(
     if not no_open and has_dashboard:
         import time
         time.sleep(2)  # Give Next.js a moment to start
-        webbrowser.open(f"http://localhost:3000")
+        webbrowser.open(f"http://localhost:{frontend_port}")
 
     # Start API server (blocking)
     try:
@@ -277,7 +351,7 @@ def browse(
         from navbuddy.api.main import create_app
 
         api_app = create_app(data_root=data_dir.resolve())
-        uvicorn.run(api_app, host="0.0.0.0", port=port, log_level="warning")
+        uvicorn.run(api_app, host="0.0.0.0", port=api_port, log_level="warning")
     except ImportError:
         console.print("[red]uvicorn not installed. Run: pip install uvicorn[/red]")
         raise typer.Exit(1)
@@ -299,7 +373,15 @@ def geocode(
     from navbuddy.routing_client import geocode as _geocode
 
     try:
-        lat, lng = _geocode(address)
+        (lat, lng), formatted, is_partial, alternatives = _geocode(address)
+        if is_partial:
+            console.print(f"[yellow]Partial match:[/yellow] {formatted}")
+            if not typer.confirm("Use this address?", default=False):
+                corrected = typer.prompt("Enter corrected address")
+                (lat, lng), formatted, _, _ = _geocode(corrected)
+                console.print(f"[dim]{formatted}[/dim]")
+        else:
+            console.print(f"[dim]{formatted}[/dim]")
         console.print(f"{lat},{lng}")
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
@@ -344,21 +426,21 @@ def generate(
         False, "--skip-images", help="Skip downloading Street View images"
     ),
     frame_profile: str = typer.Option(
-        "sparse4",
-        "--frame-profile",
-        help="Frame profile: 'sparse4' (100/80/60/40), 'video5m' (full step @ 5m), or 'custom'",
+        "manifest",
+        "--profile",
+        help="Frame profile: manifest (1 frame @ 40m), sparse4 (4 frames), dense (every 5m), or custom",
     ),
     sample_mode: str = typer.Option(
         "sparse",
         "--sample-mode",
-        "-m",
         help="Legacy alias: sparse->sparse4, dense->video5m, custom->custom",
+        hidden=True,
     ),
-    spacing: float = typer.Option(
-        20.0,
+    spacing: Optional[float] = typer.Option(
+        None,
         "--spacing",
         "-s",
-        help="Spacing between samples in meters (used by custom profile)",
+        help="Frame spacing in meters (implies custom profile, e.g. -s 20)",
     ),
     sample_start: Optional[float] = typer.Option(
         None, "--sample-start", help="Start of sampling window in meters from end of step (e.g., 150 = start 150m before end)"
@@ -405,8 +487,15 @@ def generate(
             # Not coords — try geocoding as address
             from navbuddy.routing_client import geocode as _geocode
             console.print(f"  Geocoding: [dim]{value}[/dim]")
-            lat, lng = _geocode(value)
-            console.print(f"  Resolved:  [bold]{lat},{lng}[/bold]")
+            (lat, lng), formatted, is_partial, alternatives = _geocode(value)
+            if is_partial:
+                console.print(f"  [yellow]Partial match:[/yellow] {formatted}")
+                if not typer.confirm("  Use this address?", default=False):
+                    corrected = typer.prompt("  Enter corrected address")
+                    (lat, lng), formatted, _, _ = _geocode(corrected)
+                    console.print(f"  Resolved:  [bold]{formatted}[/bold]")
+            else:
+                console.print(f"  Resolved:  [bold]{formatted}[/bold]")
             return (lat, lng)
 
     try:
@@ -436,7 +525,7 @@ def generate(
     profile = (frame_profile or "sparse4").strip().lower()
     if profile not in FRAME_PROFILES:
         console.print(f"[red]Error: Invalid --frame-profile '{frame_profile}'[/red]")
-        console.print("Valid profiles: sparse4, video5m, custom")
+        console.print("Valid profiles: manifest, sparse4, dense, custom")
         raise typer.Exit(1)
 
     legacy_mode = (sample_mode or "sparse").strip().lower()
@@ -454,13 +543,12 @@ def generate(
             raise typer.Exit(1)
         profile = legacy_profile
 
-    # Window/spacing options imply custom profile.
-    if spacing != 20.0 or sample_start is not None or sample_end is not None:
+    # --spacing or window options imply custom profile.
+    if spacing is not None or sample_start is not None or sample_end is not None:
         if profile != "custom":
-            console.print(
-                "[yellow]Info: sampling window options detected, switching frame profile to custom.[/yellow]"
-            )
             profile = "custom"
+    if spacing is None:
+        spacing = 20.0
 
     # ── Preflight: fetch route and estimate costs ──
     console.print("\n[bold]Fetching route from google...[/bold]")
@@ -484,13 +572,15 @@ def generate(
     dur_min = estimate["total_duration_s"] / 60.0
     api_calls = estimate["api_calls"]
 
+    profile_label = f"every {spacing:.0f}m" if profile == "custom" else profile
+
     console.print(f"\n{'─' * 60}")
     console.print(f"[bold]Route Summary[/bold]")
     console.print(f"{'─' * 60}")
     console.print(f"  Steps:         {estimate['steps_count']}")
     console.print(f"  Distance:      {dist_km:.1f} km")
     console.print(f"  Duration:      {dur_min:.0f} min")
-    console.print(f"  Frame profile: [cyan]{profile}[/cyan]")
+    console.print(f"  Frame profile: [cyan]{profile_label}[/cyan]")
     console.print(f"  Total frames:  {estimate['total_frames']}")
     console.print(f"  Overhead maps: {estimate['total_maps']}")
 
@@ -562,14 +652,19 @@ def generate(
             console.print(f"[red]Error: {e}[/red]")
             raise typer.Exit(1)
 
+    out = result['output_dir']
     console.print(f"\n[green]Route generated successfully![/green]")
     console.print(f"  Route ID: {result['route_id']}")
-    console.print(f"  Engine: {result.get('engine', 'unknown')}")
     console.print(f"  Steps: {result['steps_count']}")
     console.print(f"  Frames: {result['frames_count']}")
-    console.print(f"  Frame profile: {profile}")
+    console.print(f"  Frame profile: {profile_label}")
     console.print(f"  Maps: {result.get('maps_count', 0)}")
-    console.print(f"  Output: {result['output_dir']}")
+    console.print(f"  Output: {out}")
+    console.print()
+    console.print("[dim]Next steps:[/dim]")
+    console.print(f"  navbuddy browse -d {out}")
+    console.print(f"  navbuddy play {result['route_id']} -d {out}")
+    console.print(f"  navbuddy evaluate -d {out}/samples.jsonl -m google/gemini-2.0-flash-001 -n 5")
 
 
 @app.command(rich_help_panel="Data")
@@ -586,7 +681,7 @@ def download_manifest(
     ),
     frame_profile: str = typer.Option(
         "manifest",
-        "--frame-profile",
+        "--profile",
         help="Download frame profile: manifest, sparse4, video5m, or custom",
     ),
     spacing: float = typer.Option(
@@ -754,7 +849,7 @@ def regenerate_frames(
     data_root: Path = typer.Option(..., "--data-root", "-d", help="Dataset root (contains samples.jsonl)"),
     frame_profile: str = typer.Option(
         "sparse4",
-        "--frame-profile",
+        "--profile",
         help="Frame profile: sparse4, video5m, custom",
     ),
     spacing: float = typer.Option(
@@ -801,7 +896,7 @@ def regenerate_frames(
         raise typer.Exit(1)
     if frame_profile not in FRAME_PROFILES:
         console.print(f"[red]Error: Invalid frame profile '{frame_profile}'[/red]")
-        console.print("Valid profiles: sparse4, video5m, custom")
+        console.print("Valid profiles: manifest, sparse4, dense, custom")
         raise typer.Exit(1)
     if frame_profile != "custom" and (sample_start is not None or sample_end is not None or spacing != 20.0):
         console.print("[yellow]Info: custom window options ignored unless --frame-profile custom[/yellow]")
@@ -940,6 +1035,11 @@ def evaluate(
         0.0,
         "--local-temperature",
         help="Sampling temperature for local provider (0.0 = greedy)",
+    ),
+    frame_distances: Optional[str] = typer.Option(
+        None,
+        "--frames",
+        help="Comma-separated remaining distances to send, in order (e.g. '200,60,40'). ±10m tolerance.",
     ),
     dedupe_frames: bool = typer.Option(
         True,
@@ -1134,6 +1234,7 @@ def evaluate(
             local_max_new_tokens=local_max_new_tokens,
             local_temperature=local_temperature,
             dedupe_frames=dedupe_frames,
+            frame_distances=[int(x.strip()) for x in frame_distances.split(",") if x.strip()] if frame_distances else None,
             include_arrive_steps=include_arrive_steps,
             route_ids=route_ids,
             sample_ids=sample_ids,
@@ -1156,6 +1257,10 @@ def evaluate(
         console.print(f"  Failed: {failed}")
         console.print(f"  Avg latency: {avg_latency:.0f}ms")
         console.print(f"  Results: {output}")
+        console.print()
+        console.print("[dim]Next steps:[/dim]")
+        console.print(f"  navbuddy metric-eval -d {output}")
+        console.print(f"  navbuddy browse")
 
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
@@ -2150,20 +2255,34 @@ def play(
         console.print(f"[red]Error: Data root not found: {data_root}[/red]")
         raise typer.Exit(1)
 
-    # Check if route exists
+    # Check if route exists — search data_root and city subdirectories
     routes_dir = data_root / "routes" / route_id
+    effective_data_root = data_root
+    if not routes_dir.exists():
+        # Search city subdirectories (e.g. data/brisbane/routes/...)
+        for sub in sorted(data_root.iterdir()):
+            candidate = sub / "routes" / route_id
+            if candidate.is_dir():
+                effective_data_root = sub
+                routes_dir = candidate
+                break
+
     if not routes_dir.exists():
         console.print(f"[red]Error: Route not found: {route_id}[/red]")
         console.print()
+        # Collect routes from all subdirectories
+        all_routes = list_routes(data_root)
+        for sub in sorted(data_root.iterdir()):
+            if (sub / "routes").is_dir():
+                all_routes.extend(list_routes(sub))
         console.print("[yellow]Available routes:[/yellow]")
-        for r in list_routes(data_root)[:10]:
+        for r in all_routes[:10]:
             console.print(f"  - {r}")
-        routes = list_routes(data_root)
-        if len(routes) > 10:
-            console.print(f"  ... and {len(routes) - 10} more")
+        if len(all_routes) > 10:
+            console.print(f"  ... and {len(all_routes) - 10} more")
         raise typer.Exit(1)
 
-    play_route(route_id, data_root, interactive=not static, console=console)
+    play_route(route_id, effective_data_root, interactive=not static, console=console)
 
 
 @app.command("list-routes", rich_help_panel="Data")
@@ -2186,6 +2305,10 @@ def list_routes_cmd(
         raise typer.Exit(1)
 
     routes = list_routes(data_root)
+    # Also search city subdirectories
+    for sub in sorted(data_root.iterdir()):
+        if sub.is_dir() and (sub / "routes").is_dir():
+            routes.extend(list_routes(sub))
 
     if not routes:
         console.print("[yellow]No routes found.[/yellow]")
@@ -2508,6 +2631,29 @@ def stats(
                     m = s.get("maneuver", "UNKNOWN")
                     maneuvers[m] = maneuvers.get(m, 0) + 1
 
+    # Also search city subdirectories
+    for sub in sorted(data_root.iterdir()):
+        if sub.is_dir():
+            sub_routes_dir = sub / "routes"
+            if sub_routes_dir.exists():
+                routes.extend([d for d in sub_routes_dir.iterdir() if d.is_dir() and (d / "metadata.json").exists()])
+            sub_frames = sub / "frames"
+            if sub_frames.exists():
+                frames_count += len(list(sub_frames.glob("*.jpg"))) + len(list(sub_frames.glob("*.png")))
+            sub_maps = sub / "maps"
+            if sub_maps.exists():
+                osm_count += len(list(sub_maps.glob("*.png")))
+            sub_samples = sub / "samples.jsonl"
+            if sub_samples.exists():
+                with open(sub_samples, encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            s = json.loads(line)
+                            samples.append(s)
+                            m = s.get("maneuver", "UNKNOWN")
+                            maneuvers[m] = maneuvers.get(m, 0) + 1
+
     # Overall summary
     console.print("[bold cyan]Overview[/bold cyan]")
     console.print(f"  Routes: {len(routes)}")
@@ -2517,6 +2663,33 @@ def stats(
     if aug_counts:
         console.print(f"  Augmented frames: {sum(aug_counts.values())}")
     console.print()
+
+    # Routes table
+    if routes:
+        console.print("[bold cyan]Routes[/bold cyan]")
+        route_table = Table(show_header=True, header_style="bold")
+        route_table.add_column("Route ID", style="cyan")
+        route_table.add_column("Origin")
+        route_table.add_column("Destination")
+        route_table.add_column("Steps", justify="right")
+        route_table.add_column("Frames", justify="right")
+
+        for rd in sorted(routes, key=lambda d: d.name):
+            meta = json.loads((rd / "metadata.json").read_text())
+            origin = meta.get("origin", {})
+            dest = meta.get("destination", {})
+            origin_str = f"{origin.get('lat', 0):.4f},{origin.get('lng', 0):.4f}" if isinstance(origin, dict) else str(origin)
+            dest_str = f"{dest.get('lat', 0):.4f},{dest.get('lng', 0):.4f}" if isinstance(dest, dict) else str(dest)
+            route_table.add_row(
+                rd.name,
+                origin_str,
+                dest_str,
+                str(meta.get("steps_count", "?")),
+                str(meta.get("frames_count", "?")),
+            )
+
+        console.print(route_table)
+        console.print()
 
     # Maneuver distribution
     if maneuvers:
@@ -2558,10 +2731,6 @@ def stats(
             count = sum(1 for _ in open(rf, encoding="utf-8"))
             console.print(f"  {rf.name}: {count} ranked samples")
         console.print()
-
-
-        raise typer.Exit(1)
-
 
 
 @app.command("assign-splits", rich_help_panel="Training (coming soon)")

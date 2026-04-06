@@ -1,6 +1,6 @@
 """NavBuddy - Generate VLM training data for road navigation."""
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"
 
 from navbuddy import polylines
 from navbuddy import sampling

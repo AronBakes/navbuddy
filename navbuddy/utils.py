@@ -131,7 +131,7 @@ def generate_route_id(
     """
     ulid = short_ulid(8)
     if city:
-        return f"{slugify(city)}_{prefix}{ulid}"
+        return f"{slugify(city)}_{prefix}_{ulid}"
     return f"{prefix}_{ulid}"
 
 

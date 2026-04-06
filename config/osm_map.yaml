@@ -1,0 +1,28 @@
+# OSM Map Rendering Configuration
+# Used by: navbuddy generate, navbuddy download-manifest --render-maps
+
+map:
+  width: 640
+  height: 400
+  zoom: 18
+  tile_url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+
+car_icon:
+  type: arrow          # arrow, cybertruck, f1, model3, wrx, sedan
+  width: 48
+  height: 48
+  scale: 0.025
+
+overlay:
+  enabled: true
+  # Scale is auto-calculated from map height.
+  # Reference: 2.1 at 2400px height. Override here if needed.
+  # scale_override: null
+
+polyline:
+  step_color: "#4285F4"
+  step_weight: 6
+  step_opacity: 0.9
+  route_color: "#999999"
+  route_weight: 3
+  route_opacity: 0.4

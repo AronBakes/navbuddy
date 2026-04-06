@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import Iterable, List, Optional, Sequence
 
-FRAME_PROFILES = {"single", "sparse4", "video5m", "custom"}
+FRAME_PROFILES = {"single", "manifest", "sparse4", "dense", "video5m", "custom"}
 SPARSE4_TARGETS_REMAINING_M = (100, 80, 60, 40)
 VIDEO5M_DEFAULT_SPACING_M = 5.0
 VIDEO5M_DEFAULT_END_FLOOR_M = 5.0
@@ -109,11 +109,11 @@ def profile_distances(
     if profile not in FRAME_PROFILES:
         raise ValueError(f"Unknown frame profile: {frame_profile}")
 
-    if profile == "single":
+    if profile in ("single", "manifest"):
         return clamp_targets(step_distance_m, [40])
     if profile == "sparse4":
         return clamp_targets(step_distance_m, SPARSE4_TARGETS_REMAINING_M)
-    if profile == "video5m":
+    if profile in ("dense", "video5m"):
         return spaced_targets(
             step_distance_m,
             spacing_m=VIDEO5M_DEFAULT_SPACING_M,
@@ -132,7 +132,7 @@ def profile_from_sample_mode(mode: str) -> str:
     """Map legacy sample modes to canonical frame profiles."""
     normalized = (mode or "").strip().lower()
     if normalized == "dense":
-        return "video5m"
+        return "dense"
     if normalized == "custom":
         return "custom"
     return "sparse4"

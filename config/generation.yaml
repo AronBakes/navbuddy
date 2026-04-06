@@ -1,0 +1,30 @@
+# Route Generation Configuration
+# Used by: navbuddy generate, navbuddy setup
+
+frames:
+  # Profiles:
+  #   manifest — 1 frame at 40m before each maneuver (default, used in paper)
+  #   sparse4  — 4 frames at 100m, 80m, 60m, 40m before each maneuver
+  #   dense    — frame every 5m along the step (deduped by pano_id)
+  #   custom   — frames at every `spacing` meters along the step
+  profile: manifest
+
+  # Custom profile settings (used when profile: custom or -s flag)
+  spacing: 20              # meters between frames
+  # window_start: null     # start sampling N meters from step end (null = full step)
+  # window_end: null       # stop sampling N meters from step end
+
+  # Fixed distances: override profile with exact remaining distances (meters)
+  # Order matters — frames are sent to models in this order.
+  # Uncomment to use:
+  # distances: [100, 60, 40]
+
+streetview:
+  size: "640x400"
+  fov: 90
+  pitch: 0
+  source: outdoor
+
+routing:
+  engine: google           # google (only option for now)
+  # city: null             # default city prefix for route IDs

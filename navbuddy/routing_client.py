@@ -47,8 +47,17 @@ def geocode(address: str, *, api_key: Optional[str] = None) -> LatLon:
     if data.get("status") != "OK" or not data.get("results"):
         raise ValueError(f"Geocoding failed for '{address}': {data.get('status')}")
 
-    loc = data["results"][0]["geometry"]["location"]
-    return (loc["lat"], loc["lng"])
+    results = data["results"]
+    top = results[0]
+    loc = top["geometry"]["location"]
+    formatted = top.get("formatted_address", "")
+    is_partial = top.get("partial_match", False)
+
+    alternatives = [
+        r.get("formatted_address", "") for r in results[1:5]
+    ]
+
+    return (loc["lat"], loc["lng"]), formatted, is_partial, alternatives
 
 
 def reverse_geocode(lat: float, lng: float, *, api_key: Optional[str] = None) -> str:

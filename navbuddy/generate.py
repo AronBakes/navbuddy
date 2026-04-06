@@ -196,6 +196,8 @@ def generate_route(
     if not route_id:
         route_id = generate_route_id(city=city)
 
+    log(f"Route ID: {route_id}")
+
     # Get API key for routing (Google) and Street View
     api_key = get_api_key("GOOGLE_MAPS_API_KEY") or get_api_key("GOOGLE_STREETVIEW_API_KEY")
 
@@ -307,6 +309,13 @@ def generate_route(
                 )
                 frame_path = frames_dir / filename
 
+                # Skip if already downloaded
+                if frame_path.exists():
+                    frame_paths.append(f"frames/{filename}")
+                    total_frames += 1
+                    log(f"  Frame {i + 1} already exists, skipping")
+                    continue
+
                 # Download image
                 success = download_streetview_image(
                     params.to_dict(), frame_path, api_key=api_key
@@ -381,8 +390,14 @@ def generate_route(
                 remaining_dur_s = remaining_min * 60
             # Calculate arrival time
             arrival_time = _calc_arrival_time(remaining_dur_s)
-            # Further reduce overlay card size for OSM renders.
-            overlay_scale = 2.1 if map_renderer == "osm" else 1.0
+            # Scale overlay proportional to map height (reference: 2.1 at 2400px)
+            try:
+                from PIL import Image
+                _map_img = Image.open(map_path)
+                overlay_scale = 2.1 * (_map_img.height / 2400.0)
+                _map_img.close()
+            except Exception:
+                overlay_scale = 0.7
             try:
                 add_overlay_to_map(
                     map_path, step, next_step,

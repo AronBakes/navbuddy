@@ -81,7 +81,7 @@ export default function SamplesPage() {
         {stats && (
           <p className="text-sm text-[var(--color-text-muted)] mt-1">
             {stats.total_samples} samples &middot; {stats.total_models} models
-            &middot; {stats.total_results.toLocaleString()} results
+            &middot; {(stats.total_results ?? 0).toLocaleString()} results
           </p>
         )}
       </div>

@@ -83,6 +83,7 @@ export default function SampleDetailPage() {
   const [sample, setSample] = useState<SampleDetail | null>(null);
   const [results, setResults] = useState<SampleResults | null>(null);
   const [gt, setGt] = useState<CanonicalGt | null>(null);
+  const [frameIndex, setFrameIndex] = useState<number>(-1); // -1 = auto (last frame)
   const [modality, setModality] = useState<string>("all");
   const [filterCompany, setFilterCompany] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -164,7 +165,14 @@ export default function SampleDetailPage() {
     );
   }
 
-  const lastFrame = sample.frames[sample.frames.length - 1];
+  // Sort frames: closest to maneuver (smallest remaining_m) last
+  const sortedFrames = [...sample.frames].sort((a, b) => {
+    const remA = parseInt(a.match(/_(\d+)m\.jpg$/)?.[1] || "0");
+    const remB = parseInt(b.match(/_(\d+)m\.jpg$/)?.[1] || "0");
+    return remB - remA; // descending: farthest first, closest last
+  });
+  const activeIdx = frameIndex === -1 ? sortedFrames.length - 1 : frameIndex;
+  const activeFrame = sortedFrames[activeIdx];
 
   return (
     <div className="max-w-5xl">
@@ -223,13 +231,42 @@ export default function SampleDetailPage() {
 
       {/* Images */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        {lastFrame && (
-          <div className="rounded-lg overflow-hidden border border-[var(--color-border)]">
+        {activeFrame && (
+          <div className="rounded-lg overflow-hidden border border-[var(--color-border)] relative">
             <img
-              src={frameUrl(lastFrame)}
+              src={frameUrl(activeFrame)}
               alt="Dashcam frame"
               className="w-full aspect-video object-cover"
             />
+            {sortedFrames.length > 1 && (
+              <div className="absolute bottom-0 inset-x-0 flex items-center justify-between px-3 py-2 bg-gradient-to-t from-black/70 to-transparent">
+                <button
+                  onClick={() => setFrameIndex(Math.max(0, activeIdx - 1))}
+                  disabled={activeIdx === 0}
+                  className="p-1 rounded text-white/80 hover:text-white disabled:opacity-30 transition-opacity"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <div className="flex items-center gap-1.5">
+                  {sortedFrames.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setFrameIndex(i)}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        i === activeIdx ? "bg-white" : "bg-white/40 hover:bg-white/60"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={() => setFrameIndex(Math.min(sortedFrames.length - 1, activeIdx + 1))}
+                  disabled={activeIdx === sortedFrames.length - 1}
+                  className="p-1 rounded text-white/80 hover:text-white disabled:opacity-30 transition-opacity"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            )}
           </div>
         )}
         {sample.map && (

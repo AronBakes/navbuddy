@@ -1494,6 +1494,7 @@ def run_inference(
     local_max_new_tokens: int = 256,
     local_temperature: float = 0.0,
     dedupe_frames: bool = True,
+    frame_distances: Optional[List[int]] = None,
     include_arrive_steps: bool = False,
     provider_order: Optional[List[str]] = None,
     route_ids: Optional[List[str]] = None,
@@ -1689,6 +1690,9 @@ def run_inference(
                             print(f"  [SKIP] {sample.id}: overhead map not found ({overhead_path}) — modality=prior requires it")
                         skipped_existing += 1
                         continue
+                    if verbose:
+                        print(f"  Instruction: {sample.prior.instruction}")
+                        print(f"  Map: file://{overhead_path.resolve()}")
                     context_block = None
                     if context_extractor is not None:
                         context_block = context_extractor.build_context_block(
@@ -1709,6 +1713,29 @@ def run_inference(
                     frame_paths = [
                         _resolve_path(p, _city) for p in sample.images.frames
                     ]
+                    # Select specific frames by remaining distance (±10m tolerance)
+                    if frame_distances and len(frame_paths) > 1:
+                        import re
+                        def _remaining_m(p: Path) -> Optional[int]:
+                            m = re.search(r'_(\d+)m\.jpg$', p.name)
+                            return int(m.group(1)) if m else None
+
+                        selected: List[Path] = []
+                        for target in frame_distances:
+                            best = None
+                            best_diff = float('inf')
+                            for fp in frame_paths:
+                                rem = _remaining_m(fp)
+                                if rem is not None:
+                                    diff = abs(rem - target)
+                                    if diff < best_diff and diff <= 10:
+                                        best = fp
+                                        best_diff = diff
+                            if best:
+                                selected.append(best)
+                        if selected:
+                            frame_paths = selected
+
                     if (modality == "image + prior" or augment) and len(frame_paths) > 1:
                         frame_paths = frame_paths[-1:]
                     elif dedupe_frames and len(frame_paths) > 1:
@@ -1719,6 +1746,13 @@ def run_inference(
                                 f"  Deduped frames: {raw_count} -> {len(frame_paths)}"
                             )
                     overhead_path = _resolve_path(sample.images.overhead, _city) if sample.images.overhead else None
+
+                    if verbose:
+                        print(f"  Instruction: {sample.prior.instruction}")
+                        for fp in frame_paths:
+                            print(f"  Frame: file://{fp.resolve()}")
+                        if overhead_path:
+                            print(f"  Map: file://{overhead_path.resolve()}")
 
                     # Validate image availability before sending to API
                     existing_frames = [p for p in frame_paths if p.exists()]
@@ -1793,7 +1827,12 @@ def run_inference(
                 cache.set(sample.id, model_id, modality, augment or "", result.model_dump())
 
             if verbose:
-                print(f"  -> {result.enhanced_instruction[:60]}...")
+                if result.error:
+                    print(f"  [FAILED] {result.error}")
+                else:
+                    print(f"  Response: {result.enhanced_instruction}")
+                    if result.inference_metadata and result.inference_metadata.latency_ms is not None:
+                        print(f"  Latency: {result.inference_metadata.latency_ms}ms | Tokens: {result.inference_metadata.tokens_in}in/{result.inference_metadata.tokens_out}out")
 
     if verbose:
         if skipped_existing:

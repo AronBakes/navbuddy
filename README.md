@@ -38,18 +38,11 @@ For **NavBuddy-100 only** (no route generation), you just need **Street View Sta
 navbuddy setup
 ```
 
-Prompts for your API key, downloads 100 Street View frames (~$0.70) and pre-rendered overhead maps. For multi-frame sequences (4 per step, ~$2.72): `navbuddy setup --frame-profile sparse4`.
-
-Save your key for other commands:
-
-```bash
-echo 'GOOGLE_MAPS_API_KEY=your_key' >> .env
-```
+Prompts for your API key, downloads 100 Street View frames (~$0.70) and pre-rendered overhead maps, and saves your keys to `.env`. For multi-frame sequences (4 per step, ~$2.72): `navbuddy setup --frame-profile sparse4`.
 
 ### Run inference
 
 ```bash
-echo 'OPENROUTER_API_KEY=your_key' >> .env
 navbuddy evaluate -d ./data/samples.jsonl -m google/gemini-3-flash-preview --data-root ./data -n 5
 ```
 
@@ -82,8 +75,36 @@ pip install navbuddy[render] && playwright install chromium
 ### Evaluate and score
 
 ```bash
-navbuddy evaluate -d ./data/samples.jsonl -m google/gemini-3-flash-preview -o results/gemini.jsonl
-navbuddy metrics -p results/gemini.jsonl -l data/ground_truth.jsonl
+# Run inference on 5 samples
+navbuddy evaluate -d data/samples.jsonl -m google/gemini-2.0-flash-001 -n 5
+
+# Use a different prompt version
+navbuddy evaluate -d data/samples.jsonl -m google/gemini-2.0-flash-001 --prompt-version v3
+
+# Score results against ground truth (no API calls)
+navbuddy metric-eval -d results/gemini_2_0_flash_001.jsonl
+```
+
+### Prompts and customization
+
+NavBuddy ships with multiple prompt versions. The default (`v1`) asks the model to predict the next action, lane changes, lane count, and landmarks from a Street View frame + overhead map.
+
+Prompts are defined in [`navbuddy/eval/inference.py`](navbuddy/eval/inference.py). Available versions:
+
+| Flag | Description |
+|------|-------------|
+| `--prompt-version v1` | Default structured output prompt |
+| `--prompt-version v2` | Simplified prompt |
+| `--prompt-version v3` | Chain-of-thought with reasoning |
+| `--prompt-version v4` | Concise, minimal instructions |
+| `--prompt-version driving` | Natural spoken co-pilot style |
+| `--prompt-version driving_brief` | One-sentence co-pilot (under 15 words) |
+
+You can also pass a fully custom system prompt:
+
+```bash
+navbuddy evaluate -d data/samples.jsonl -m google/gemini-2.0-flash-001 \
+  --system-prompt "You are a driving assistant. Describe the next maneuver in one sentence."
 ```
 
 ### Explore data
@@ -111,17 +132,6 @@ Google Maps labels each instruction on the segment it *produces*, not the segmen
 Google Maps step N:  "Turn left onto Breakfast Creek Rd"   <- describes entry into step N
 NavBuddy step N:     prior.instruction = step N+1          <- approaching the next turn
 ```
-
----
-
-## Environment variables
-
-Copy `.env.example` to `.env`:
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GOOGLE_MAPS_API_KEY` | Yes | Routing, Street View, geocoding |
-| `OPENROUTER_API_KEY` | For inference | VLM inference via [OpenRouter](https://openrouter.ai/keys) |
 
 ---
 

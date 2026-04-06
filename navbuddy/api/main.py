@@ -11,10 +11,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
 
+def _city_from_id(sample_id: str) -> str:
+    """Extract city name from sample ID, e.g. 'brisbane_routeXXX_step001' -> 'brisbane'."""
+    if sample_id.startswith("route_"):
+        return "custom"
+    parts = sample_id.split("_route")
+    return parts[0] if parts[0] else "custom"
+
+
 def create_app(data_root: Path) -> FastAPI:
     """Create the FastAPI app with the given data root."""
 
-    app = FastAPI(title="NavBuddy-100 Viewer", version="0.1.0")
+    app = FastAPI(title="NavBuddy-100 Viewer", version="0.3.0")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -35,14 +43,33 @@ def create_app(data_root: Path) -> FastAPI:
     def _load():
         nonlocal samples, samples_by_id, canonical_gt, split_config, models_config, results_by_sample
 
-        # Samples
-        samples_path = data_root / "gt_split_samples.jsonl"
-        if samples_path.exists():
-            with open(samples_path) as f:
+        # Samples — load from gt_split_samples.jsonl and samples.jsonl,
+        # including city subdirectories (e.g. data/brisbane/samples.jsonl)
+        seen_ids: set = set()
+        sample_files = []
+        for name in ["gt_split_samples.jsonl", "samples.jsonl"]:
+            p = data_root / name
+            if p.exists():
+                sample_files.append(p)
+        # Search city subdirectories
+        for sub in sorted(data_root.iterdir()):
+            if sub.is_dir():
+                p = sub / "samples.jsonl"
+                if p.exists():
+                    sample_files.append(p)
+        for sp in sample_files:
+            city_name = sp.parent.name if sp.parent != data_root else ""
+            with open(sp) as f:
                 for line in f:
                     if line.strip():
-                        samples.append(json.loads(line))
-            samples_by_id = {s["id"]: s for s in samples}
+                        s = json.loads(line)
+                        sid = s.get("id", "")
+                        if sid and sid not in seen_ids:
+                            if city_name and "_city" not in s:
+                                s["_city"] = city_name
+                            samples.append(s)
+                            seen_ids.add(sid)
+        samples_by_id = {s["id"]: s for s in samples}
 
         # Canonical GT
         gt_path = data_root / "canonical_gt.jsonl"
@@ -66,9 +93,14 @@ def create_app(data_root: Path) -> FastAPI:
                 data = json.load(f)
                 models_config.extend(data.get("models", []))
 
-        # Results
-        results_dir = data_root / "results"
-        if results_dir.is_dir():
+        # Results — check data/results/ and ./results/ (evaluate writes to cwd)
+        result_dirs = [data_root / "results"]
+        cwd_results = Path.cwd() / "results"
+        if cwd_results.resolve() != (data_root / "results").resolve():
+            result_dirs.append(cwd_results)
+        for results_dir in result_dirs:
+            if not results_dir.is_dir():
+                continue
             for result_file in sorted(results_dir.glob("*.jsonl")):
                 with open(result_file) as f:
                     for line in f:
@@ -93,7 +125,7 @@ def create_app(data_root: Path) -> FastAPI:
     def get_stats():
         cities: Dict[str, int] = {}
         for s in samples:
-            city = s.get("_city", s["id"].split("_route")[0])
+            city = s.get("_city", _city_from_id(s["id"]))
             cities[city] = cities.get(city, 0) + 1
 
         models_with_results = set()
@@ -113,7 +145,7 @@ def create_app(data_root: Path) -> FastAPI:
         out = []
         for s in samples:
             sid = s["id"]
-            city = s.get("_city", sid.split("_route")[0])
+            city = s.get("_city", _city_from_id(sid))
             maneuver = s.get("maneuver", "")
             instruction = s.get("prior", {}).get("instruction", "")
             frames = s.get("images", {}).get("frames", [])
@@ -140,8 +172,22 @@ def create_app(data_root: Path) -> FastAPI:
         if not s:
             raise HTTPException(404, f"Sample {sample_id} not found")
 
-        city = s.get("_city", sample_id.split("_route")[0])
+        city = s.get("_city", _city_from_id(sample_id))
         frames = s.get("images", {}).get("frames", [])
+        # Auto-discover additional frames on disk (e.g. sparse4 frames not in samples.jsonl)
+        # Search data_root and city subdirectories
+        prefix = f"{sample_id}_"
+        on_disk: list[str] = []
+        for search_dir in [data_root / "frames"] + [
+            sub / "frames" for sub in data_root.iterdir() if sub.is_dir()
+        ]:
+            if search_dir.is_dir():
+                on_disk.extend(
+                    f"frames/{p.name}" for p in search_dir.glob(f"{prefix}*.jpg")
+                )
+        on_disk = sorted(set(on_disk))
+        if len(on_disk) > len(frames):
+            frames = on_disk
         overhead = s.get("images", {}).get("overhead")
 
         # Find prev/next
@@ -186,16 +232,28 @@ def create_app(data_root: Path) -> FastAPI:
 
     # ── Static file serving (frames + maps) ──
 
+    def _find_file(subdir: str, filename: str) -> Path:
+        """Search data_root and city subdirectories for a file."""
+        path = data_root / subdir / filename
+        if path.exists():
+            return path
+        for sub in data_root.iterdir():
+            if sub.is_dir():
+                p = sub / subdir / filename
+                if p.exists():
+                    return p
+        return path  # return default (will 404)
+
     @app.get("/api/frames/{filename:path}")
     def get_frame(filename: str):
-        path = data_root / "frames" / filename
+        path = _find_file("frames", filename)
         if not path.exists():
             raise HTTPException(404, f"Frame not found: {filename}")
         return FileResponse(path, media_type="image/jpeg")
 
     @app.get("/api/maps/{filename:path}")
     def get_map(filename: str):
-        path = data_root / "maps" / filename
+        path = _find_file("maps", filename)
         if not path.exists():
             raise HTTPException(404, f"Map not found: {filename}")
         return FileResponse(path, media_type="image/png")

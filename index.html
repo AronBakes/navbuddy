@@ -8,10 +8,13 @@
   <meta property="og:title" content="NavBuddy — AI-Augmented Navigation" />
   <meta property="og:description" content="Using VLMs and dashcam footage for context-aware lane-level guidance." />
   <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://raw.githubusercontent.com/AronBakes/navbuddy/main/images/brisbane_route78pq19zcm_step002_map.png" />
+  <link rel="icon" type="image/png" href="assets/navbuddy-sedan.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
   <style>
     /* === Variables === */
     :root {
@@ -21,16 +24,16 @@
       --text: #b8c2d4;
       --text-heading: #e8ecf4;
       --text-muted: #8796a8;
-      --accent: #e8a838;
-      --accent-hover: #f0b840;
-      --accent-glow: rgba(232, 168, 56, 0.15);
-      --accent-glow-strong: rgba(232, 168, 56, 0.25);
+      --accent: #f59e0b;
+      --accent-hover: #fbbf24;
+      --accent-glow: rgba(245, 158, 11, 0.15);
+      --accent-glow-strong: rgba(245, 158, 11, 0.25);
       --blue: #4d9fff;
       --blue-glow: rgba(77, 159, 255, 0.12);
       --border: #1a2438;
       --border-hover: #2a3a58;
       --radius: 12px;
-      --max-w: 1080px;
+      --max-w: 1200px;
       --transition: 0.3s ease;
       --transition-fast: 0.2s ease;
     }
@@ -41,10 +44,10 @@
       --text: #3a4050;
       --text-heading: #1a1f2e;
       --text-muted: #8a929e;
-      --accent: #c88510;
-      --accent-hover: #b07008;
-      --accent-glow: rgba(200, 133, 16, 0.1);
-      --accent-glow-strong: rgba(200, 133, 16, 0.18);
+      --accent: #d97706;
+      --accent-hover: #b45309;
+      --accent-glow: rgba(217, 119, 6, 0.12);
+      --accent-glow-strong: rgba(217, 119, 6, 0.2);
       --blue: #2563eb;
       --blue-glow: rgba(37, 99, 235, 0.1);
       --border: #d8d2c8;
@@ -56,6 +59,7 @@
     html { scroll-behavior: smooth; }
     body {
       font-family: 'Outfit', sans-serif;
+      font-size: 16px;
       background: var(--bg);
       color: var(--text);
       line-height: 1.7;
@@ -273,7 +277,7 @@
     }
     .hero-title {
       font-family: 'Syne', sans-serif;
-      font-size: clamp(3rem, 8vw, 5.5rem);
+      font-size: clamp(3.5rem, 9vw, 6.5rem);
       font-weight: 800;
       color: var(--text-heading);
       letter-spacing: -0.03em;
@@ -288,8 +292,8 @@
     }
     .hero-title .accent { color: var(--accent); }
     .hero-subtitle {
-      font-size: clamp(1rem, 2.5vw, 1.25rem);
-      max-width: 580px;
+      font-size: clamp(1.05rem, 2.5vw, 1.35rem);
+      max-width: 640px;
       color: var(--text);
       font-weight: 300;
       margin-bottom: 3rem;
@@ -426,7 +430,7 @@
     }
     .section-title {
       font-family: 'Syne', sans-serif;
-      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      font-size: clamp(2rem, 4.5vw, 2.8rem);
       font-weight: 700;
       color: var(--text-heading);
       letter-spacing: -0.02em;
@@ -521,7 +525,7 @@
       width: 22px;
       height: 22px;
       background: var(--accent);
-      color: #0a0f1a;
+      color: var(--bg);
       border-radius: 50%;
       font-family: 'Syne', sans-serif;
       font-size: 0.65rem;
@@ -894,6 +898,53 @@
     .reveal-d3 { transition-delay: 0.3s; }
     .reveal-d4 { transition-delay: 0.4s; }
 
+    /* === Multi-modality bar chart === */
+    .metric-bar-inner {
+      height: 100%;
+      border-radius: 11px;
+      transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      width: 0;
+      cursor: pointer;
+    }
+    .metric-bar-inner:hover { filter: brightness(1.15); }
+    .bar-tooltip {
+      position: fixed;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.75rem;
+      font-family: 'Outfit', sans-serif;
+      color: var(--text-heading);
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .bar-tooltip.visible { opacity: 1; }
+    .modality-legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+      font-size: 0.78rem;
+      font-family: 'Outfit', sans-serif;
+      color: var(--text);
+    }
+    .modality-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .modality-legend-swatch {
+      width: 14px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
     /* === Responsive === */
     @media (max-width: 900px) {
       .resource-grid { grid-template-columns: repeat(2, 1fr); }
@@ -932,6 +983,25 @@
       .hero-actions {
         flex-direction: column;
         align-items: center;
+      }
+      /* Compare section mobile */
+      #compare-grid > div:first-child,
+      #compare-grid > div:last-child {
+        padding: 0 !important;
+        margin-bottom: 1rem;
+      }
+      /* Leaderboard table scroll */
+      .leaderboard-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      /* Stack compare images vertically on mobile */
+      #compare-images {
+        grid-template-columns: 1fr !important;
+      }
+      /* Stack compare controls on mobile */
+      #compare-controls {
+        grid-template-columns: 1fr !important;
       }
     }
     @media (max-width: 480px) {
@@ -998,7 +1068,6 @@
       <a href="#" class="nav-logo">Nav<span>Buddy</span></a>
       <div class="nav-links">
         <a href="#abstract">Abstract</a>
-        <a href="#pipeline">Method</a>
         <a href="#results">Results</a>
         <a href="#compare">Compare</a>
         <a href="#resources">Resources</a>
@@ -1016,7 +1085,7 @@
 
   <nav id="mobile-menu" class="mobile-menu" aria-label="Mobile navigation">
     <a href="#abstract" onclick="closeMobileMenu()">Abstract</a>
-    <a href="#pipeline" onclick="closeMobileMenu()">Method</a>
+
     <a href="#results" onclick="closeMobileMenu()">Results</a>
     <a href="#compare" onclick="closeMobileMenu()">Compare</a>
     <a href="#resources" onclick="closeMobileMenu()">Resources</a>
@@ -1082,67 +1151,6 @@
       </div>
     </section>
 
-    <!-- Pipeline -->
-    <section class="section" id="pipeline">
-      <div class="container">
-        <div class="section-label reveal">Method</div>
-        <h2 class="section-title reveal reveal-d1">How It Works</h2>
-        <div class="pipeline reveal reveal-d2">
-          <div class="pipeline-line"></div>
-          <div class="pipe-step">
-            <div class="pipe-icon">
-              <span class="pipe-number">01</span>
-              <i class="fas fa-route"></i>
-            </div>
-            <div class="pipe-text">
-              <div class="pipe-label">Route Data</div>
-              <div class="pipe-desc">Step-by-step directions from Google Maps or Valhalla</div>
-            </div>
-          </div>
-          <div class="pipe-step">
-            <div class="pipe-icon">
-              <span class="pipe-number">02</span>
-              <i class="fas fa-video"></i>
-            </div>
-            <div class="pipe-text">
-              <div class="pipe-label">Dashcam Feed</div>
-              <div class="pipe-desc">Multi-frame street-level imagery along the route</div>
-            </div>
-          </div>
-          <div class="pipe-step">
-            <div class="pipe-icon">
-              <span class="pipe-number">03</span>
-              <i class="fas fa-brain"></i>
-            </div>
-            <div class="pipe-text">
-              <div class="pipe-label">VLM Processing</div>
-              <div class="pipe-desc">Vision-language model extracts scene context and cues</div>
-            </div>
-          </div>
-          <div class="pipe-step">
-            <div class="pipe-icon">
-              <span class="pipe-number">04</span>
-              <i class="fas fa-layer-group"></i>
-            </div>
-            <div class="pipe-text">
-              <div class="pipe-label">Context Fusion</div>
-              <div class="pipe-desc">Route, visual, and map data merged with confidence scoring</div>
-            </div>
-          </div>
-          <div class="pipe-step">
-            <div class="pipe-icon">
-              <span class="pipe-number">05</span>
-              <i class="fas fa-comment-dots"></i>
-            </div>
-            <div class="pipe-text">
-              <div class="pipe-label">Clear Guidance</div>
-              <div class="pipe-desc">Concise, lane-level instruction delivered to the driver</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- Augmentations -->
     <!-- Results -->
     <section class="section" id="results">
@@ -1158,8 +1166,15 @@
           All metrics computed on image+prior modality against human-verified ground truth.
         </p>
 
+        <div class="reveal reveal-d1" style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;margin-bottom:1.5rem;font-size:0.75rem;color:var(--text-muted);line-height:1.6;">
+          <span><strong style="color:var(--text);">Action</strong> — Direction accuracy (left / right / straight)</span>
+          <span><strong style="color:var(--text);">LC F1</strong> — Lane change detection F1, majority vote per sample</span>
+          <span><strong style="color:var(--text);">Ln MAE</strong> — Lane count mean absolute error (lower is better)</span>
+          <span><strong style="color:var(--text);">BERT F1</strong> — BERTScore F1 for instruction text similarity</span>
+        </div>
+
         <!-- Leaderboard table -->
-        <div class="reveal reveal-d2" style="overflow-x:auto; margin-bottom: 2.5rem;">
+        <div class="reveal reveal-d2 leaderboard-scroll" style="overflow-x:auto; margin-bottom: 2.5rem;">
           <table id="leaderboard" style="width:100%; border-collapse:collapse;">
             <thead>
               <tr style="border-bottom:2px solid var(--border);">
@@ -1184,15 +1199,12 @@
             <option value="lc">Lane Change F1</option>
             <option value="bs">BERTScore F1</option>
             <option value="ln">Lane Count MAE</option>
+            <option value="len">Response Length (Words)</option>
           </select>
-          <select id="bar-modality" onchange="renderMetricBars()" style="padding:0.35rem 0.6rem;background:var(--bg);color:var(--text-heading);border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:'Outfit',sans-serif;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238796a8%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;">
-            <option value="ip">Image + Prior</option>
-            <option value="vp">Video + Prior</option>
-            <option value="p">Prior Only</option>
-            <option value="ap">Augment + Prior</option>
-          </select>
+          <div id="modality-legend" class="modality-legend" style="margin-left:auto;margin-bottom:0;"></div>
         </div>
-        <div id="metric-bars" class="reveal reveal-d1" style="margin-bottom:2.5rem;"></div>
+        <div id="metric-bars" class="reveal reveal-d1" style="margin-bottom:2.5rem;position:relative;"></div>
+        <div id="bar-tooltip" class="bar-tooltip"></div>
 
       </div>
     </section>
@@ -1200,11 +1212,11 @@
     <!-- Compare -->
     <section class="section section-alt" id="compare">
       <div class="container">
-        <div class="section-label reveal">Interactive</div>
-        <h2 class="section-title reveal reveal-d1">Compare Models</h2>
+        <div class="section-label reveal">Explore</div>
+        <h2 class="section-title reveal reveal-d1">Sample Browser</h2>
 
         <!-- Controls — left-aligned, no "vs" label -->
-        <div class="reveal reveal-d2" style="display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;align-items:center;margin-bottom:2rem;max-width:700px;">
+        <div id="compare-controls" class="reveal reveal-d2" style="display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;align-items:center;margin-bottom:2rem;max-width:700px;">
           <select id="model-a" style="padding:0.55rem 0.8rem;background:var(--bg);color:var(--text-heading);border:1px solid var(--border);border-radius:6px;font-size:0.82rem;font-family:'Outfit',sans-serif;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238796a8%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;"></select>
           <select id="model-b" style="padding:0.55rem 0.8rem;background:var(--bg);color:var(--text-heading);border:1px solid var(--border);border-radius:6px;font-size:0.82rem;font-family:'Outfit',sans-serif;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238796a8%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;"></select>
           <button onclick="nextSample()" style="padding:0.55rem 1rem;background:none;color:var(--text-muted);border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:'Outfit',sans-serif;cursor:pointer;transition:all 0.15s;white-space:nowrap;" onmouseenter="this.style.borderColor='var(--border-hover)';this.style.color='var(--text-heading)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">Next →</button>
@@ -1212,17 +1224,22 @@
 
         <!-- Sample context -->
         <div class="reveal reveal-d3" style="margin-bottom:1.5rem;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.2rem;">
-            <img id="compare-frame" src="" alt="Dashcam frame" style="width:100%;aspect-ratio:16/10;border-radius:6px;border:1px solid var(--border);object-fit:cover;" />
-            <img id="compare-map" src="" alt="Overhead map" style="width:100%;aspect-ratio:16/10;border-radius:6px;border:1px solid var(--border);object-fit:cover;object-position:center bottom;" />
+          <div id="compare-images" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.2rem;">
+            <img id="compare-frame" src="" alt="Dashcam frame" style="width:100%;aspect-ratio:16/10;border-radius:6px;border:1px solid var(--border);object-fit:contain;background:var(--bg-alt);" />
+            <img id="compare-map" src="" alt="Overhead map" style="width:100%;aspect-ratio:16/10;border-radius:6px;border:1px solid var(--border);object-fit:contain;background:var(--bg-alt);" />
           </div>
-          <div style="display:flex;align-items:baseline;gap:0.6rem;margin-bottom:0.4rem;">
-            <span style="font-size:0.65rem;color:var(--text-muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;flex-shrink:0;">Step</span>
-            <span id="compare-nav" style="color:var(--text-heading);font-size:0.9rem;font-weight:500;"></span>
+
+          <!-- Original instruction -->
+          <div style="padding:0.8rem 1rem;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;margin-bottom:0.75rem;">
+            <div style="font-size:0.6rem;color:var(--text-muted);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.3rem;">Navigation Instruction</div>
+            <div id="compare-nav" style="color:var(--text-heading);font-size:0.9rem;font-weight:500;line-height:1.5;"></div>
           </div>
-          <div style="display:flex;align-items:baseline;gap:0.6rem;">
-            <span style="font-size:0.65rem;color:var(--text-muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;flex-shrink:0;">GT</span>
-            <span id="compare-gt" style="color:#4ade80;font-size:0.85rem;"></span>
+
+          <!-- GT row -->
+          <div style="padding:0.8rem 1rem;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.2);border-radius:8px;margin-bottom:0.75rem;">
+            <div style="font-size:0.6rem;color:#4ade80;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.3rem;">Ground Truth</div>
+            <div id="compare-gt" style="color:var(--text-heading);font-size:0.88rem;line-height:1.5;margin-bottom:0.5rem;"></div>
+            <div id="compare-gt-meta" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
           </div>
         </div>
 
@@ -1248,10 +1265,10 @@
       <div class="container">
         <div class="section-label reveal">Resources</div>
         <div class="resource-grid">
-          <a href="#" class="resource-card reveal reveal-d2" target="_blank" rel="noopener noreferrer">
+          <a href="#" class="resource-card reveal reveal-d2" style="opacity:0.5;pointer-events:none;">
             <i class="fas fa-file-lines" aria-hidden="true"></i>
-            <h3>Paper</h3>
-            <p>Read the full paper on IEEE Xplore</p>
+            <h3>Paper (coming soon)</h3>
+            <p>Full paper coming soon — ICMI 2026</p>
             <span class="arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="https://github.com/AronBakes/navbuddy" class="resource-card reveal reveal-d3" target="_blank" rel="noopener noreferrer">
@@ -1321,9 +1338,8 @@
   <footer>
     <div class="footer-nav">
       <a href="#abstract">Abstract</a>
-      <a href="#pipeline">Method</a>
-      <a href="#augmentations">Results</a>
-      <a href="#compare">Compare</a>
+      <a href="#results">Results</a>
+      <a href="#compare">Samples</a>
       <a href="#citation">Citation</a>
     </div>
     <p>&copy; 2026 <a href="#">Aron Bakes</a> &middot; Queensland University of Technology</p>
@@ -1506,26 +1522,26 @@
       tbody.innerHTML = LB_DATA.map(r => {
         const pc = PROVIDER_COLORS[providerOf(r.m)] || 'var(--text-muted)';
         const cell = (v, k) => {
-          if (v === null || v === undefined) return '<td style="text-align:right;padding:0.55rem 0.6rem;color:var(--text-muted);font-size:0.82rem;">—</td>';
+          if (v === null || v === undefined) return '<td style="text-align:right;padding:0.6rem 0.75rem;color:var(--text-muted);font-size:0.9rem;">—</td>';
           const isBest = v === best[k];
           const {best:b, worst:w, lower} = ranges[k] || {};
           const color = scoreColor(v, b, w, lower);
           const bold = isBest ? 'font-weight:700;' : '';
-          return `<td style="text-align:right;padding:0.55rem 0.6rem;font-family:monospace;font-size:0.82rem;color:${color};${bold}">${v.toFixed(3)}</td>`;
+          return `<td style="text-align:right;padding:0.6rem 0.75rem;font-family:monospace;font-size:0.9rem;color:${color};${bold}">${v.toFixed(3)}</td>`;
         };
         const lnCell = r.ip_ln != null
           ? (() => {
               const color = scoreColor(r.ip_ln, ranges.ip_ln.best, ranges.ip_ln.worst, true);
               const bold = r.ip_ln === best.ip_ln ? 'font-weight:700;' : '';
-              return `<td style="text-align:right;padding:0.55rem 0.6rem;font-family:monospace;font-size:0.82rem;color:${color};${bold}">${r.ip_ln.toFixed(2)}</td>`;
+              return `<td style="text-align:right;padding:0.6rem 0.75rem;font-family:monospace;font-size:0.9rem;color:${color};${bold}">${r.ip_ln.toFixed(2)}</td>`;
             })()
-          : '<td style="text-align:right;padding:0.55rem 0.6rem;color:var(--text-muted);font-size:0.82rem;">—</td>';
+          : '<td style="text-align:right;padding:0.6rem 0.75rem;color:var(--text-muted);font-size:0.9rem;">—</td>';
         return `<tr style="border-bottom:1px solid var(--border);transition:background 0.15s;" onmouseenter="this.style.background='var(--bg-alt)'" onmouseleave="this.style.background=''">
-          <td style="padding:0.55rem 0.8rem;white-space:nowrap;font-size:0.85rem;"><span style="display:inline-block;width:3px;height:14px;border-radius:2px;background:${pc};margin-right:8px;vertical-align:middle;"></span>${r.m}</td>
-          <td style="text-align:right;padding:0.55rem 0.6rem;color:var(--text-muted);font-size:0.82rem;font-family:monospace;">${r.lat}s</td>
+          <td style="padding:0.6rem 0.9rem;white-space:nowrap;font-size:0.95rem;"><span style="display:inline-block;width:3px;height:14px;border-radius:2px;background:${pc};margin-right:8px;vertical-align:middle;"></span>${r.m}</td>
+          <td style="text-align:right;padding:0.6rem 0.75rem;color:var(--text-muted);font-size:0.9rem;font-family:monospace;">${r.lat}s</td>
           ${cell(r.ip,'ip')}${cell(r.ip_lc,'ip_lc')}${cell(r.ip_act,'ip_act')}
           ${lnCell}
-          <td style="text-align:right;padding:0.55rem 0.6rem;color:var(--text-muted);font-size:0.82rem;font-family:monospace;">${r.len}</td>
+          <td style="text-align:right;padding:0.6rem 0.75rem;color:var(--text-muted);font-size:0.9rem;font-family:monospace;">${r.ip_len != null ? r.ip_len : r.len}</td>
         </tr>`;
       }).join('');
     }
@@ -1545,38 +1561,152 @@
       renderLeaderboard();
     }
 
-    // Unified metric bar chart with modality support
-    // Keys: BERTScore = ip/vp/p/ap, others = {mod}_{metric} e.g. ip_act, vp_lc, ap_ln
+    // Multi-modality stacked bar chart
+    const MODALITY_COLORS = [
+      { key: 'p',  label: 'Prior Only',       color: '#d08020' },
+      { key: 'ap', label: 'Augment + Prior',   color: '#20a070' },
+      { key: 'ip', label: 'Image + Prior',     color: '#8050e0' },
+      { key: 'vp', label: 'Video + Prior',     color: '#4070e0' }
+    ];
+    let _barsInitialized = false;
+
     function renderMetricBars() {
       const metric = document.getElementById('bar-metric').value;
-      const mod = document.getElementById('bar-modality').value;
-      const key = metric === 'bs' ? mod : mod + '_' + metric;
       const isBs = metric === 'bs';
       const isLn = metric === 'ln';
-      const filtered = LB_DATA.filter(r => r[key] != null);
+      const isLen = metric === 'len';
+      const fmt = v => v == null ? '—' :
+        isLen ? v.toFixed(1) :
+        isLn ? v.toFixed(2) : (isBs ? v.toFixed(3) : (v * 100).toFixed(1) + '%');
+
+      const modKeys = MODALITY_COLORS.map(mod => ({
+        ...mod,
+        dataKey: isBs ? mod.key : mod.key + '_' + metric
+      }));
+
+      const filtered = LB_DATA.filter(r =>
+        modKeys.some(mk => r[mk.dataKey] != null)
+      );
+
       if (!filtered.length) {
-        document.getElementById('metric-bars').innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;">No data for this combination</div>';
+        document.getElementById('metric-bars').innerHTML =
+          '<div style="color:var(--text-muted);font-size:0.8rem;">No data for this metric.</div>';
         return;
       }
-      const sorted = [...filtered].sort((a,b) => isLn ? a[key] - b[key] : b[key] - a[key]);
-      const maxVal = Math.max(...sorted.map(r => r[key]));
-      const minVal = Math.min(...sorted.map(r => r[key]));
-      const fmt = v => isLn ? v.toFixed(2) : (isBs ? v.toFixed(3) : (v*100).toFixed(1) + '%');
-      document.getElementById('metric-bars').innerHTML = sorted.map(r => {
-        const pc = PROVIDER_COLORS[providerOf(r.m)] || '#888';
-        const w = isLn ? (maxVal > 0 ? ((maxVal - r[key] + minVal) / maxVal * 100).toFixed(1) : '0') : (maxVal > 0 ? (r[key] / maxVal * 100).toFixed(1) : '0');
+
+      const bestScore = r => {
+        const vals = modKeys.map(mk => r[mk.dataKey]).filter(v => v != null);
+        const lowerBetter = isLn || isLen;
+        return vals.length ? (lowerBetter ? Math.min(...vals) : Math.max(...vals)) : (lowerBetter ? Infinity : -Infinity);
+      };
+
+      const lowerBetter = isLn || isLen;
+      const sorted = [...filtered].sort((a, b) =>
+        lowerBetter ? bestScore(a) - bestScore(b) : bestScore(b) - bestScore(a)
+      );
+
+      const allVals = sorted.flatMap(r => modKeys.map(mk => r[mk.dataKey]).filter(v => v != null));
+      const maxVal = Math.max(...allVals);
+      const minVal = Math.min(...allVals);
+
+      const barWidth = v => {
+        if (v == null) return 0;
+        if (lowerBetter) return maxVal > 0 ? ((maxVal - v + minVal) / maxVal * 100) : 0;
+        return maxVal > 0 ? (v / maxVal * 100) : 0;
+      };
+
+      // Legend
+      document.getElementById('modality-legend').innerHTML = modKeys.map(mk =>
+        `<div class="modality-legend-item">
+          <span class="modality-legend-swatch" style="background:${mk.color};"></span>
+          ${mk.label}
+        </div>`
+      ).join('');
+
+      const tooltip = document.getElementById('bar-tooltip');
+
+      document.getElementById('metric-bars').innerHTML = sorted.map((r, ri) => {
+        const modVals = modKeys.map(mk => ({
+          ...mk, val: r[mk.dataKey]
+        })).filter(mv => mv.val != null);
+
+        // Sort by bar width descending — widest (best) first (bottom layer), narrowest last (top layer)
+        modVals.sort((a, b) => barWidth(b.val) - barWidth(a.val));
+
+        // Stack bars using absolute positioning — widest rendered first (bottom), shortest last (top)
+        const bars = modVals.map((mv, i) => {
+          const w = barWidth(mv.val).toFixed(1);
+          const delay = _barsInitialized ? 0 : ri * 25 + i * 40;
+          const zIndex = i + 1; // shortest bar gets highest z-index (rendered on top)
+          return `<div class="metric-bar-inner"
+            data-w="${w}" data-label="${mv.label}" data-value="${fmt(mv.val)}"
+            style="position:absolute;top:0;left:0;height:100%;background:${mv.color};border-radius:11px;z-index:${zIndex};transition-delay:${delay}ms;">
+          </div>`;
+        }).join('');
+
+        const best = modVals.length ? modVals[0] : null;
+        const bestVal = best ? best.val : null;
+
         return `<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.4rem;">
-          <div style="width:160px;text-align:right;font-size:0.8rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.m}</div>
-          <div style="flex:1;height:22px;background:var(--bg);border-radius:4px;overflow:hidden;position:relative;">
-            <div style="height:100%;width:${w}%;background:${pc};border-radius:4px;opacity:0.8;"></div>
+          <div style="width:140px;text-align:right;font-size:0.8rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.m}">${r.m}</div>
+          <div style="flex:1;height:22px;background:var(--bg);border-radius:11px;overflow:hidden;position:relative;">
+            ${bars}
           </div>
-          <div style="width:52px;text-align:right;font-size:0.78rem;font-family:monospace;color:var(--text-heading);">${fmt(r[key])}</div>
+          <div style="width:52px;text-align:right;font-size:0.78rem;font-family:monospace;color:var(--text-heading);">${bestVal != null ? fmt(bestVal) : '—'}</div>
         </div>`;
       }).join('');
+
+      // Animate widths
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.querySelectorAll('.metric-bar-inner').forEach(el => {
+            el.style.width = el.dataset.w + '%';
+          });
+        });
+      });
+      _barsInitialized = true;
+
+      // Tooltip handlers
+      document.querySelectorAll('.metric-bar-inner').forEach(el => {
+        el.addEventListener('mouseenter', () => {
+          tooltip.textContent = el.dataset.label + ': ' + el.dataset.value;
+          tooltip.classList.add('visible');
+        });
+        el.addEventListener('mousemove', e => {
+          tooltip.style.left = (e.clientX + 12) + 'px';
+          tooltip.style.top = (e.clientY - 28) + 'px';
+        });
+        el.addEventListener('mouseleave', () => {
+          tooltip.classList.remove('visible');
+        });
+      });
+    }
+
+    // ═══ ACTION ICONS ═══
+    const ACTION_ICONS = {
+      'straight': 'straight', 'continue': 'straight', 'keep_straight': 'straight',
+      'turn_left': 'turn_left', 'fork_left': 'fork_left', 'merge_left': 'merge',
+      'keep_left': 'turn_slight_left', 'slight_left': 'turn_slight_left',
+      'sharp_left': 'turn_sharp_left', 'uturn_left': 'u_turn_left',
+      'roundabout_left': 'roundabout_left', 'ramp_left': 'ramp_left',
+      'turn_right': 'turn_right', 'fork_right': 'fork_right', 'merge_right': 'merge',
+      'keep_right': 'turn_slight_right', 'slight_right': 'turn_slight_right',
+      'sharp_right': 'turn_sharp_right', 'uturn_right': 'u_turn_right',
+      'roundabout_right': 'roundabout_right', 'ramp_right': 'ramp_right',
+      'roundabout': 'roundabout_right', 'merge': 'merge',
+    };
+    function actionIcon(action) {
+      const key = (action || '').toLowerCase().replace(/-/g, '_');
+      const icon = ACTION_ICONS[key] || 'navigation';
+      return `<span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;margin-right:4px;">${icon}</span>`;
     }
 
     // ═══ COMPARE ═══
-    const COMPARE_DATA = [{"id": "brisbane_route78pq19zcm_step002", "nav": "Turn left onto Benson St/Coronation Dr/State Route 33", "gt": "Turn left past the Footmotion store at the green Benson St sign.", "gt_action": "turn_left", "models": {"gpt-4o-mini": {"instruction": "Turn left at the traffic lights onto Benson St.", "action": "turn_left", "lc": "yes", "landmarks": ["traffic_light", "Benson St sign"]}, "gpt-5.4": {"instruction": "Turn left at the lights onto Benson Street, staying in the left lane.", "action": "turn_left", "lc": "yes", "landmarks": ["traffic_light", "road_sign", "FootMotion store"]}, "gemini-3-flash-preview": {"instruction": "From the left lane, turn left onto Benson Street at the green City sign.", "action": "turn_left", "lc": "no", "landmarks": ["directional_sign", "traffic_light", "high-rise_building"]}, "gemini-3.1-pro-preview": {"instruction": "Use the left lane to turn left at the traffic light.", "action": "turn_left", "lc": "no", "landmarks": ["traffic_light"]}, "claude-sonnet-4.6": {"instruction": "Turn left onto Benson St following the Route 33 City sign ahead.", "action": "turn_left", "lc": "yes", "landmarks": ["traffic_light", "route_sign"]}, "claude-opus-4.6": {"instruction": "Use left lane and turn left onto Benson St at the Route 33 City sign near Footmotion.", "action": "turn_left", "lc": "yes", "landmarks": ["direction_sign", "retail_store", "high_rise_building"]}, "grok-4.1-fast": {"instruction": "Turn left at Benson St sign on right onto Coronation Dr.", "action": "turn_left", "lc": "no", "landmarks": ["Benson St sign"]}, "grok-4.20-beta": {"instruction": "Turn left onto Benson St at Footmotion store", "action": "turn_left", "lc": "no", "landmarks": ["Footmotion store"]}, "qwen3-vl-8b-instruct": {"instruction": "Turn left at the footpath sign onto Benson St/Coronation Dr/State Route 33", "action": "turn_left", "lc": "no", "landmarks": ["footpath_sign", "traffic_light", "FootMotion store"]}, "qwen2.5-vl-72b-instruct": {"instruction": "Turn left at Benson St sign, near Footwear Plus store.", "action": "turn_left", "lc": "no", "landmarks": ["Benson St sign", "Footwear Plus store"]}, "Qwen2.5-VL-3B-Instruct": {"instruction": "Turn left onto Benson St/Coronation Dr/State Route 33. Continue to follow Coronation Dr/State Route 33.", "action": "straight", "lc": "no", "landmarks": ["Benson St", "Coronation Dr", "State Route 33"]}}}, {"id": "brisbane_route8yc1y0ymd_step002", "nav": "Continue onto Inner City Byp (signs for Clem Jones Tunnel)", "gt": "Stay in right lane for Inner City Byp, signs for Clem Jones Tunnel ahead", "gt_action": "straight", "models": {"gpt-4o-mini": {"instruction": "Continue onto Inner City Byp, following signs for Clem Jones Tunnel.", "action": "merge_right", "lc": "no", "landmarks": ["road_signs", "inner_city_bypass"]}, "gpt-5.4": {"instruction": "Keep right and continue onto Inner City Bypass, following the overhead Clem Jones Tunnel signs.", "action": "keep_right", "lc": "yes", "landmarks": ["overhead_signs", "overpass"]}, "gemini-3-flash-preview": {"instruction": "Keep right at the fork following signs for Clem Jones Tunnel and Gold Coast.", "action": "fork_right", "lc": "no", "landmarks": ["overhead_sign", "freeway_overpass"]}, "gemini-3.1-pro-preview": {"instruction": "Keep left under the overhead signs to stay on the Inner City Bypass.", "action": "keep_left", "lc": "no", "landmarks": ["overhead sign"]}, "claude-sonnet-4.6": {"instruction": "Keep left following green signs for Clem Jones Tunnel and Gold Coast.", "action": "keep_left", "lc": "no", "landmarks": ["overhead_highway_signs"]}, "claude-opus-4.6": {"instruction": "Stay in left lanes following Sunshine Coast signs, continue onto Inner City Bypass past Gold Coast exit.", "action": "straight", "lc": "no", "landmarks": ["overhead_highway_signs", "overpass", "street_lights", "concrete_barrier"]}, "grok-4.1-fast": {"instruction": "Continue straight under overhead signs for Clem Jones Tunnel.", "action": "straight", "lc": "no", "landmarks": ["overhead_signs"]}, "grok-4.20-beta": {"instruction": "Continue onto Inner City Byp in left lane", "action": "straight", "lc": "no", "landmarks": ["overhead_sign", "concrete_barrier"]}, "qwen3-vl-8b-instruct": {"instruction": "Stay in right lane, continue onto Inner City Byp for Clem Jones Tunnel", "action": "straight", "lc": "no", "landmarks": ["traffic_sign", "road_sign", "Clem Jones Tunnel sign"]}, "qwen2.5-vl-72b-instruct": {"instruction": "Keep right towards Inner City Byp, follow signs for Clem Jones Tunnel.", "action": "keep_right", "lc": "yes", "landmarks": ["road_sign", "inner_city_bypass"]}, "Qwen2.5-VL-3B-Instruct": {"instruction": "Continue onto the Inner City Bypass towards Clem Jones Tunnel.", "action": "straight", "lc": "no", "landmarks": ["Inner City Bypass", "Clem Jones Tunnel"]}}}, {"id": "brisbane_route8yc1y0ymd_step004", "nav": "Turn right onto Allison St", "gt": "Turn right onto Allison St", "gt_action": "turn_right", "models": {"gpt-4o-mini": {"instruction": "Turn right onto Allison St at the petrol station ahead.", "action": "turn_right", "lc": "yes", "landmarks": ["petrol_station"]}, "gpt-5.4": {"instruction": "Keep right in the right-turn lane, then turn right after the petrol station.", "action": "turn_right", "lc": "yes", "landmarks": ["petrol_station"]}, "gemini-3-flash-preview": {"instruction": "Using the right lane, turn right onto Allison Street past the Ampol petrol station.", "action": "turn_right", "lc": "no", "landmarks": ["Ampol petrol station", "traffic_light", "yellow billboard"]}, "gemini-3.1-pro-preview": {"instruction": "After the petrol station on your left, use the right lanes to turn right.", "action": "turn_right", "lc": "no", "landmarks": ["petrol_station", "traffic_light"]}, "claude-sonnet-4.6": {"instruction": "Turn right onto Allison St past the petrol station on your left.", "action": "turn_right", "lc": "no", "landmarks": ["petrol_station"]}, "claude-opus-4.6": {"instruction": "Use right lane, turn right onto Allison St past the petrol station on your left.", "action": "turn_right", "lc": "yes", "landmarks": ["petrol_station", "concrete_median_barrier"]}, "grok-4.1-fast": {"instruction": "Turn right onto Allison St at traffic lights past petrol station.", "action": "turn_right", "lc": "yes", "landmarks": ["petrol_station", "traffic_light"]}, "grok-4.20-beta": {"instruction": "Turn right onto Allison St after petrol station", "action": "turn_right", "lc": "no", "landmarks": ["petrol_station"]}, "qwen3-vl-8b-instruct": {"instruction": "Turn right onto Allison St, past the petrol station on your left.", "action": "turn_right", "lc": "no", "landmarks": ["petrol_station"]}, "qwen2.5-vl-72b-instruct": {"instruction": "Turn right onto Allison St after passing the petrol station.", "action": "turn_right", "lc": "no", "landmarks": ["petrol_station"]}, "Qwen2.5-VL-3B-Instruct": {"instruction": "Continue straight for 241 meters and then turn right onto Allison St.", "action": "straight", "lc": "no", "landmarks": ["Allison St"]}}}, {"id": "brisbane_route8yc1y0ymd_step008", "nav": "Turn left onto Chester St", "gt": "Change to the left lane to turn left onto Chester St after the bus stop.", "gt_action": "turn_left", "models": {"gpt-4o-mini": {"instruction": "Turn left onto Chester St at the intersection ahead.", "action": "turn_left", "lc": "yes", "landmarks": ["Alex Perry building", "traffic_light"]}, "gpt-5.4": {"instruction": "Move to the left lane and turn left at the next lights onto Chester Street.", "action": "turn_left", "lc": "yes", "landmarks": ["traffic_light", "bus_stop", "apartment_building"]}, "gemini-3-flash-preview": {"instruction": "Move to the left lane and turn left onto Chester Street after the Alex Perry building.", "action": "turn_left", "lc": "yes", "landmarks": ["Alex Perry building", "bus_stop", "traffic_light"]}, "gemini-3.1-pro-preview": {"instruction": "Change to the left lane to turn left onto Chester St after the bus stop.", "action": "turn_left", "lc": "yes", "landmarks": ["bus_stop"]}, "claude-sonnet-4.6": {"instruction": "Turn left onto Chester St, staying in the left lane past the Alex Perry building.", "action": "turn_left", "lc": "yes", "landmarks": ["traffic_light"]}, "claude-opus-4.6": {"instruction": "Use left lane and turn left onto Chester St, past the Alex Perry building on your left.", "action": "turn_left", "lc": "yes", "landmarks": ["Alex Perry building", "glass_building_under_construction", "tree-lined_median"]}, "grok-4.1-fast": {"instruction": "At roundabout ahead, take 3rd exit left onto Chester St.", "action": "roundabout", "lc": "no", "landmarks": []}, "grok-4.20-beta": {"instruction": "Turn left onto Chester St after blue glass building", "action": "turn_left", "lc": "no", "landmarks": ["traffic_light", "modern_building"]}, "qwen3-vl-8b-instruct": {"instruction": "Turn left onto Chester St, passing the Alex Perry building.", "action": "turn_left", "lc": "no", "landmarks": ["Alex Perry building"]}, "qwen2.5-vl-72b-instruct": {"instruction": "Turn left past Ann St tram stop; city centre buildings are ahead.", "action": "turn_left", "lc": "no", "landmarks": ["Ann St tram stop", "city centre buildings"]}, "Qwen2.5-VL-3B-Instruct": {"instruction": "Turn left onto Chester St. At the roundabout, take the 3rd exit onto Kent St.", "action": "turn_left", "lc": "yes", "landmarks": ["roundabout"]}}}, {"id": "brisbane_route0bmpfsqys_step007", "nav": "Slight right onto Evans Rd/State Route 20", "gt": "Merge into the right turning lanes, then turn right and continue past the BP petrol station.", "gt_action": "slight_right", "models": {"gpt-4o-mini": {"instruction": "Slight right onto Evans Rd near McDonald's.", "action": "turn_right", "lc": "yes", "landmarks": ["McDonald's"]}, "gpt-5.4": {"instruction": "Keep right and bear right onto Evans Road at the lights, passing McDonald's on your left.", "action": "keep_right", "lc": "yes", "landmarks": ["traffic_light", "mcdonalds"]}, "gemini-3-flash-preview": {"instruction": "Pass McDonald's on the left, then keep right to stay on Evans Road at the lights.", "action": "keep_right", "lc": "no", "landmarks": ["McDonald's", "traffic_light"]}, "gemini-3.1-pro-preview": {"instruction": "Keep right at the traffic light past the fast food restaurant onto Evans Road.", "action": "fork_right", "lc": "no", "landmarks": ["fast_food_restaurant", "traffic_light"]}, "claude-sonnet-4.6": {"instruction": "Bear slight right onto Evans Rd at the traffic lights, past McDonald's on your left.", "action": "fork_right", "lc": "yes", "landmarks": ["traffic_light", "mcdonalds"]}, "claude-opus-4.6": {"instruction": "At the traffic lights past McDonald's on your left, bear slight right onto Evans Rd.", "action": "fork_right", "lc": "no", "landmarks": ["McDonalds", "traffic_light", "street_light"]}, "grok-4.1-fast": {"instruction": "Slight right onto Evans Rd past McDonald's at traffic lights.", "action": "turn_right", "lc": "no", "landmarks": ["mcdonalds", "traffic_light"]}, "grok-4.20-beta": {"instruction": "Slight right onto Evans Rd after McDonald's", "action": "turn_right", "lc": "no", "landmarks": ["mcdonalds"]}, "qwen3-vl-8b-instruct": {"instruction": "Slight right onto Evans Rd/State Route 20 after McDonald's", "action": "turn_right", "lc": "no", "landmarks": ["McDonald's"]}, "qwen2.5-vl-72b-instruct": {"instruction": "Slight right onto Evans Rd after McDonald's and traffic lights.", "action": "fork_right", "lc": "no", "landmarks": ["traffic_light", "McDonald's"]}, "Qwen2.5-VL-3B-Instruct": {"instruction": "Slight right onto Evans Rd/State Route 20, then turn left onto National Route 13.", "action": "turn_left", "lc": "yes", "landmarks": ["McDonald's", "Salisbury Recreation Reserve"]}}}];
+    let COMPARE_DATA = [];
+    fetch('data/compare.json')
+      .then(r => r.json())
+      .then(data => { COMPARE_DATA = data; initCompare(); })
+      .catch(() => console.warn('Could not load data/compare.json'));
 
     let compareIdx = 0;
     function initCompare() {
@@ -1598,11 +1728,34 @@
     }
 
     function renderCompare() {
+      if (!COMPARE_DATA.length) return;
       const sample = COMPARE_DATA[compareIdx];
       const mA = document.getElementById('model-a').value;
       const mB = document.getElementById('model-b').value;
-      document.getElementById('compare-nav').textContent = sample.nav;
-      document.getElementById('compare-gt').textContent = `"${sample.gt}"`;
+
+      // Nav instruction with icon
+      document.getElementById('compare-nav').innerHTML = actionIcon(sample.gt_action) + sample.nav;
+
+      // GT instruction
+      document.getElementById('compare-gt').textContent = sample.gt;
+
+      // GT meta badges (action, lane change, lanes)
+      const gtLcLabel = sample.gt_lc === 'yes' ? 'Yes' : (sample.gt_lc === 'no' ? 'No' : '—');
+      const gtLcColor = sample.gt_lc === 'yes' ? '#22c55e' : 'var(--text-muted)';
+      const gtLanes = sample.gt_lanes != null ? sample.gt_lanes : '—';
+      document.getElementById('compare-gt-meta').innerHTML = `
+        <span style="display:inline-flex;align-items:center;gap:2px;padding:3px 10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:6px;font-size:0.75rem;color:#22c55e;font-family:monospace;">
+          ${actionIcon(sample.gt_action)}${sample.gt_action}
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:0.72rem;color:${gtLcColor};">
+          LC: ${gtLcLabel}
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:0.72rem;color:var(--text-muted);">
+          Lanes: ${gtLanes}
+        </span>
+      `;
+
+      // Images
       document.getElementById('compare-frame').src = `images/${sample.id}_frame.jpg`;
       document.getElementById('compare-map').src = `images/${sample.id}_map.png`;
       document.getElementById('compare-label-a').textContent = mA;
@@ -1617,17 +1770,60 @@
           metaEl.innerHTML = '';
           return;
         }
-        instrEl.textContent = `"${r.instruction}"`;
-        const parts = [r.action, `LC: ${r.lc}`];
-        if (r.landmarks && r.landmarks.length) parts.push(r.landmarks.slice(0,3).join(', '));
-        metaEl.innerHTML = `<span style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;line-height:1.6;">${parts.join(' · ')}</span>`;
+
+        // Check if action matches GT direction
+        const gtGroup = actionGroup(sample.gt_action);
+        const predGroup = actionGroup(r.action);
+        const actionCorrect = gtGroup && predGroup && gtGroup === predGroup;
+        const actionColor = actionCorrect ? '#22c55e' : '#ef4444';
+
+        // Lane change comparison
+        const lcCorrect = sample.gt_lc != null && r.lc === sample.gt_lc;
+        const lcColor = sample.gt_lc == null ? 'var(--text-muted)' : (lcCorrect ? '#22c55e' : '#ef4444');
+        const lcLabel = r.lc === 'yes' ? 'Yes' : 'No';
+
+        // Lanes comparison
+        const lanesVal = r.lanes != null ? r.lanes : '—';
+        const lanesCorrect = sample.gt_lanes != null && r.lanes != null && r.lanes === sample.gt_lanes;
+        const lanesColor = r.lanes == null || sample.gt_lanes == null ? 'var(--text-muted)' : (lanesCorrect ? '#22c55e' : '#ef4444');
+
+        // Landmark tags
+        const landmarkTags = (r.landmarks || []).slice(0, 4).map(l =>
+          `<span style="display:inline-block;padding:2px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:0.7rem;color:var(--text-muted);margin:2px;">${l}</span>`
+        ).join('');
+
+        metaEl.innerHTML = `
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+            <span style="display:inline-flex;align-items:center;gap:2px;padding:3px 10px;background:${actionCorrect ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'};border:1px solid ${actionColor};border-radius:6px;font-size:0.75rem;color:${actionColor};font-family:monospace;">
+              ${actionIcon(r.action)}${r.action}
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg);border:1px solid ${lcColor === 'var(--text-muted)' ? 'var(--border)' : lcColor};border-radius:6px;font-size:0.72rem;color:${lcColor};">
+              LC: ${lcLabel}
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg);border:1px solid ${lanesColor === 'var(--text-muted)' ? 'var(--border)' : lanesColor};border-radius:6px;font-size:0.72rem;color:${lanesColor};">
+              Lanes: ${lanesVal}
+            </span>
+          </div>
+          ${landmarkTags ? `<div style="margin-bottom:0.5rem;">${landmarkTags}</div>` : ''}
+        `;
+        instrEl.innerHTML = `<span style="color:var(--text);font-style:italic;">"${r.instruction}"</span>`;
       });
+    }
+
+    function actionGroup(action) {
+      const a = (action || '').toLowerCase().replace(/-/g, '_');
+      const left = ['turn_left','fork_left','merge_left','keep_left','slight_left','sharp_left','uturn_left','roundabout_left','ramp_left'];
+      const right = ['turn_right','fork_right','merge_right','keep_right','slight_right','sharp_right','uturn_right','roundabout_right','ramp_right'];
+      const straight = ['straight','continue','keep_straight'];
+      if (left.includes(a)) return 'left';
+      if (right.includes(a)) return 'right';
+      if (straight.includes(a)) return 'straight';
+      return null;
     }
 
     // Init everything
     renderLeaderboard();
     renderMetricBars();
-    initCompare();
   </script>
 </body>
 </html>

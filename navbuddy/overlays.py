@@ -28,6 +28,12 @@ try:
 except ImportError:
     HAS_PLAYWRIGHT = False
 
+from navbuddy.config import OVERLAY_SCALE, OVERLAY_DEVICE_SCALE
+
+# Instruction truncation limits (different rendering contexts have different widths)
+PIL_MAX_INSTR_LEN = 180       # PIL text rendering — wider canvas, smaller font
+PIL_MAX_SECONDARY_LEN = 160   # PIL secondary instruction line
+HTML_MAX_INSTR_LEN = 60       # Playwright HTML card — constrained width
 
 # Maneuver icon mapping for Material Symbols
 MANEUVER_ICONS = {
@@ -161,7 +167,8 @@ def _extract_step_nav(step: Dict) -> Tuple[str, str, Optional[float]]:
 
 def _get_icon_name(maneuver: str) -> str:
     """Get Material Symbols icon name for maneuver."""
-    return MANEUVER_ICONS.get((maneuver or "").upper(), "navigation")
+    key = (maneuver or "").upper().replace("-", "_")
+    return MANEUVER_ICONS.get(key, "navigation")
 
 
 def _vstack(top: Image.Image, bottom: Image.Image) -> Image.Image:
@@ -239,7 +246,7 @@ def overlay_nav_eta_pil(
             y += font_large.getbbox("Hg")[3] + 4
         except Exception:
             y += 28
-    nav_draw.text((pad, y), instr[:180], fill=text_light, font=font_med)
+    nav_draw.text((pad, y), instr[:PIL_MAX_INSTR_LEN], fill=text_light, font=font_med)
 
     # Secondary line (next step)
     if next_step:
@@ -248,7 +255,7 @@ def overlay_nav_eta_pil(
             sec_h = int(nav_height * 0.45)
             sec_box = Image.new("RGBA", (nav_width, sec_h), green_secondary)
             sec_draw = ImageDraw.Draw(sec_box)
-            sec_draw.text((pad, int(sec_h * 0.3)), ntext[:160], fill=text_light, font=font_small)
+            sec_draw.text((pad, int(sec_h * 0.3)), ntext[:PIL_MAX_SECONDARY_LEN], fill=text_light, font=font_small)
             nav_box = _vstack(nav_box, sec_box)
 
     # ETA card
@@ -296,9 +303,8 @@ def _render_nav_sign_html(
     icon_name = _get_icon_name(maneuver)
 
     # Truncate instruction to prevent overflow
-    max_instr_len = 60
-    if len(instr) > max_instr_len:
-        instr = instr[:max_instr_len - 3] + "..."
+    if len(instr) > HTML_MAX_INSTR_LEN:
+        instr = instr[:HTML_MAX_INSTR_LEN - 3] + "..."
 
     # Constrained dimensions - fit within typical 800px map with padding
     # max_width_px is passed as (image_width - 2*padding), so use it directly
@@ -447,7 +453,7 @@ def overlay_nav_eta_html(
     distance_km: Optional[float] = None,
     out_path: Optional[Path] = None,
     pad: int = 16,
-    device_scale_factor: int = 2,
+    device_scale_factor: int = OVERLAY_DEVICE_SCALE,
     overlay_scale: float = 1.0,
 ) -> Path:
     """Compose nav and ETA cards onto image using Playwright + HTML.
@@ -536,7 +542,7 @@ def add_overlay_to_map(
     out_path: Optional[Path] = None,
     use_playwright: bool = True,
     overlay_scale: float = 1.0,
-    device_scale_factor: int = 2,
+    device_scale_factor: int = OVERLAY_DEVICE_SCALE,
 ) -> Path:
     """Add navigation overlay to a map image.
 

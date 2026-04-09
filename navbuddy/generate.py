@@ -32,7 +32,7 @@ LatLon = Tuple[float, float]
 # Default assets directory (relative to package)
 DEFAULT_ASSETS_DIR = Path(__file__).parent.parent / "assets"
 
-__all__ = ["generate_route", "preflight_route"]
+__all__ = ["generate_route", "fetch_and_save_route", "preflight_route", "generate_route_metadata_from_manifest"]
 
 
 STREETVIEW_COST_PER_1000 = 7.00  # USD per 1000 Street View requests
@@ -143,6 +143,233 @@ def preflight_route(
     }
 
 
+def fetch_and_save_route(
+    origin: LatLon,
+    destination: LatLon,
+    *,
+    output_dir: Path,
+    city: Optional[str] = None,
+    route_id: Optional[str] = None,
+    progress_callback: Optional[Callable[[str], None]] = None,
+) -> Dict[str, Any]:
+    """Fetch route from Google Directions, apply N+1 correction, and save route files.
+
+    Creates ``data/routes/{route_id}/`` with route.json, metadata.json,
+    guidance.json, and polyline.json.  Returns a dict containing the route
+    data needed by downstream pipeline stages.
+
+    Args:
+        origin: (lat, lon) tuple for start
+        destination: (lat, lon) tuple for end
+        output_dir: Base output directory
+        city: Optional city name for route ID prefix
+        route_id: Optional custom route ID (generated if omitted)
+        progress_callback: Optional callback for progress updates
+
+    Returns:
+        Dict with route_id, steps, route, route_polyline, routes_dir,
+        total_distance_m, total_duration_s
+    """
+
+    def log(msg: str):
+        if progress_callback:
+            progress_callback(msg)
+
+    # Generate route ID
+    if not route_id:
+        route_id = generate_route_id(city=city)
+
+    log(f"Route ID: {route_id}")
+
+    # Get API key for routing (Google)
+    api_key = get_api_key("GOOGLE_MAPS_API_KEY") or get_api_key("GOOGLE_STREETVIEW_API_KEY")
+
+    log("Requesting route from Google Directions...")
+
+    try:
+        route = get_route(
+            origin,
+            destination,
+            api_key=api_key,
+        )
+    except Exception as e:
+        raise RuntimeError(f"Failed to get route: {e}")
+
+    # Extract steps from all legs
+    all_steps = []
+    for leg in route.get("legs", []):
+        all_steps.extend(leg.get("steps", []))
+
+    if not all_steps:
+        raise RuntimeError("No steps found in route")
+
+    log(f"Got {len(all_steps)} steps, applying N+1 instruction policy...")
+
+    # Apply N+1 instruction resolution
+    steps = resolve_effective_instructions(all_steps)
+
+    # Extract full route polyline for dual-layer map rendering
+    route_polyline = route.get("polyline", {}).get("encodedPolyline5", "")
+    if not route_polyline:
+        route_polyline = route.get("polyline", {}).get("encodedPolyline", "")
+
+    if route_polyline:
+        log(f"Route polyline: {len(route_polyline)} chars")
+    else:
+        log("Warning: No route polyline found - only step polylines will be shown")
+
+    # Calculate total route distance and duration
+    total_distance_m = route.get("distanceMeters", 0)
+    total_duration_s = _parse_duration(route.get("duration", "0s"))
+
+    # Create routes directory
+    output_dir = Path(output_dir)
+    routes_dir = output_dir / "routes" / route_id
+    routes_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save route.json (full normalized response)
+    log("Saving route files...")
+    with open(routes_dir / "route.json", "w", encoding="utf-8") as f:
+        json.dump(route, f, indent=2)
+
+    # Save metadata.json (summary)
+    metadata = {
+        "route_id": route_id,
+        "origin": {"lat": origin[0], "lng": origin[1]},
+        "destination": {"lat": destination[0], "lng": destination[1]},
+        "total_distance_m": total_distance_m,
+        "total_duration_s": total_duration_s,
+        "steps_count": len(steps),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    with open(routes_dir / "metadata.json", "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
+
+    # Save guidance.json
+    with open(routes_dir / "guidance.json", "w", encoding="utf-8") as f:
+        json.dump({"steps": steps}, f, indent=2)
+
+    # Save polyline.json
+    polyline_data = {
+        "encoded": route.get("polyline", {}).get("encodedPolyline", ""),
+        "encoded5": route.get("polyline", {}).get("encodedPolyline5", ""),
+    }
+    with open(routes_dir / "polyline.json", "w", encoding="utf-8") as f:
+        json.dump(polyline_data, f, indent=2)
+
+    return {
+        "route_id": route_id,
+        "steps": steps,
+        "route": route,
+        "route_polyline": route_polyline,
+        "routes_dir": routes_dir,
+        "total_distance_m": total_distance_m,
+        "total_duration_s": total_duration_s,
+    }
+
+
+def generate_route_metadata_from_manifest(
+    manifest_path: Path,
+    output_dir: Path,
+    *,
+    progress_callback: Optional[Callable[[str], None]] = None,
+) -> int:
+    """Reconstruct route metadata files from the NavBuddy-100 manifest.
+
+    For each route in the manifest, creates:
+        output_dir/routes/{route_id}/metadata.json
+        output_dir/routes/{route_id}/guidance.json
+        output_dir/routes/{route_id}/polyline.json
+
+    No API calls — all data comes from the manifest.
+
+    Returns:
+        Number of routes processed.
+    """
+    from navbuddy.polylines import decode_polyline, encode_polyline
+
+    def log(msg: str):
+        if progress_callback:
+            progress_callback(msg)
+
+    with open(manifest_path, "r", encoding="utf-8") as f:
+        manifest = json.load(f)
+
+    routes = manifest.get("routes", [])
+    log(f"Generating route metadata for {len(routes)} routes...")
+
+    for route_entry in routes:
+        rid = route_entry["route_id"]
+        routes_dir = output_dir / "routes" / rid
+        routes_dir.mkdir(parents=True, exist_ok=True)
+
+        # metadata.json
+        metadata = {
+            "route_id": rid,
+            "origin": route_entry.get("origin"),
+            "destination": route_entry.get("destination"),
+            "total_distance_m": route_entry.get("total_distance_m", 0),
+            "total_duration_s": route_entry.get("total_duration_s", 0),
+            "steps_count": route_entry.get("steps_count", 0),
+            "city": route_entry.get("city", ""),
+            "routing_engine": route_entry.get("routing_engine", "google"),
+        }
+        with open(routes_dir / "metadata.json", "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2)
+
+        # guidance.json — reshape manifest steps into guidance format
+        manifest_steps = route_entry.get("steps", [])
+        guidance_steps = []
+        for s in manifest_steps:
+            guidance_step = {
+                "maneuverIndex": s.get("step_index", 0),
+                "distanceMeters": s.get("distance_m", 0),
+                "polyline": {
+                    "encodedPolyline": s.get("polyline", ""),
+                    "encodedPolyline5": s.get("polyline", ""),
+                },
+                "startLocation": {
+                    "latLng": {
+                        "latitude": s.get("start_lat"),
+                        "longitude": s.get("start_lng"),
+                    }
+                },
+                "endLocation": {
+                    "latLng": {
+                        "latitude": s.get("end_lat"),
+                        "longitude": s.get("end_lng"),
+                    }
+                },
+                "navigationInstruction": {
+                    "maneuver": s.get("maneuver", ""),
+                    "instruction": s.get("instruction", ""),
+                },
+            }
+            guidance_steps.append(guidance_step)
+
+        with open(routes_dir / "guidance.json", "w", encoding="utf-8") as f:
+            json.dump({"steps": guidance_steps}, f, indent=2)
+
+        # polyline.json — use route-level polyline if available, otherwise stitch steps
+        route_polyline = route_entry.get("polyline", "")
+        if not route_polyline:
+            all_coords = []
+            for s in manifest_steps:
+                step_poly = s.get("polyline", "")
+                if step_poly:
+                    coords = decode_polyline(step_poly)
+                    if all_coords and coords and all_coords[-1] == coords[0]:
+                        coords = coords[1:]
+                    all_coords.extend(coords)
+            route_polyline = encode_polyline(all_coords) if all_coords else ""
+
+        with open(routes_dir / "polyline.json", "w", encoding="utf-8") as f:
+            json.dump({"encoded": route_polyline, "encoded5": route_polyline}, f, indent=2)
+
+    log(f"Route metadata saved for {len(routes)} routes")
+    return len(routes)
+
+
 def generate_route(
     origin: LatLon,
     destination: LatLon,
@@ -192,67 +419,39 @@ def generate_route(
         if progress_callback:
             progress_callback(msg)
 
-    # Generate route ID
-    if not route_id:
-        route_id = generate_route_id(city=city)
+    # Fetch route, apply N+1, and save route files
+    route_data = fetch_and_save_route(
+        origin,
+        destination,
+        output_dir=output_dir,
+        city=city,
+        route_id=route_id,
+        progress_callback=progress_callback,
+    )
 
-    log(f"Route ID: {route_id}")
+    route_id = route_data["route_id"]
+    steps = route_data["steps"]
+    route = route_data["route"]
+    route_polyline = route_data["route_polyline"]
+    routes_dir = route_data["routes_dir"]
+    total_distance_m = route_data["total_distance_m"]
+    total_duration_s = route_data["total_duration_s"]
 
-    # Get API key for routing (Google) and Street View
+    # Get API key for Street View downloads
     api_key = get_api_key("GOOGLE_MAPS_API_KEY") or get_api_key("GOOGLE_STREETVIEW_API_KEY")
-
-    log("Requesting route from Google Directions...")
-
-    try:
-        route = get_route(
-            origin,
-            destination,
-            api_key=api_key,
-        )
-    except Exception as e:
-        raise RuntimeError(f"Failed to get route: {e}")
-
-    # Extract steps from all legs
-    all_steps = []
-    for leg in route.get("legs", []):
-        all_steps.extend(leg.get("steps", []))
-
-    if not all_steps:
-        raise RuntimeError("No steps found in route")
-
-    log(f"Got {len(all_steps)} steps, applying N+1 instruction policy...")
-
-    # Apply N+1 instruction resolution
-    steps = resolve_effective_instructions(all_steps)
-
-    # Extract full route polyline for dual-layer map rendering
-    route_polyline = route.get("polyline", {}).get("encodedPolyline5", "")
-    if not route_polyline:
-        route_polyline = route.get("polyline", {}).get("encodedPolyline", "")
-
-    if route_polyline:
-        log(f"Route polyline: {len(route_polyline)} chars")
-    else:
-        log("Warning: No route polyline found - only step polylines will be shown")
 
     # Set up assets directory for custom car icons
     if assets_dir is None:
         assets_dir = DEFAULT_ASSETS_DIR
     assets_dir = Path(assets_dir)
 
-    # Create output directories
+    # Create output directories for frames and maps
     output_dir = Path(output_dir)
-    routes_dir = output_dir / "routes" / route_id
     frames_dir = output_dir / "frames"
     maps_dir = output_dir / "maps"
 
-    routes_dir.mkdir(parents=True, exist_ok=True)
     frames_dir.mkdir(parents=True, exist_ok=True)
     maps_dir.mkdir(parents=True, exist_ok=True)
-
-    # Calculate total route distance and duration for overlays
-    total_distance_m = route.get("distanceMeters", 0)
-    total_duration_s = _parse_duration(route.get("duration", "0s"))
 
     # Process each step
     samples = []
@@ -390,14 +589,7 @@ def generate_route(
                 remaining_dur_s = remaining_min * 60
             # Calculate arrival time
             arrival_time = _calc_arrival_time(remaining_dur_s)
-            # Scale overlay proportional to map height (reference: 2.1 at 2400px)
-            try:
-                from PIL import Image
-                _map_img = Image.open(map_path)
-                overlay_scale = 1.4
-                _map_img.close()
-            except Exception:
-                overlay_scale = 0.7
+            from navbuddy.config import OVERLAY_SCALE, OVERLAY_DEVICE_SCALE
             try:
                 add_overlay_to_map(
                     map_path, step, next_step,
@@ -405,8 +597,8 @@ def generate_route(
                     minutes_remaining=remaining_min,
                     distance_km=remaining_km,
                     use_playwright=True,
-                    overlay_scale=overlay_scale,
-                    device_scale_factor=1,
+                    overlay_scale=OVERLAY_SCALE,
+                    device_scale_factor=OVERLAY_DEVICE_SCALE,
                 )
             except Exception as e:
                 log(f"  Warning: Failed to add overlay: {e}")
@@ -453,36 +645,17 @@ def generate_route(
         }
         samples.append(sample)
 
-    # Save route metadata
-    log("Saving route metadata...")
+    # Update metadata.json with frame processing details
+    log("Updating route metadata with frame info...")
 
-    metadata = {
-        "route_id": route_id,
-        "origin": {"lat": origin[0], "lng": origin[1]},
-        "destination": {"lat": destination[0], "lng": destination[1]},
-        "total_distance_m": route.get("distanceMeters", 0),
-        "total_duration_s": _parse_duration(route.get("duration", "0s")),
-        "steps_count": len(steps),
-        "frames_count": total_frames,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "frame_profile": frame_profile,
-        "sample_mode": sample_mode,
-    }
-
-    with open(routes_dir / "metadata.json", "w", encoding="utf-8") as f:
+    metadata_path = routes_dir / "metadata.json"
+    with open(metadata_path, "r", encoding="utf-8") as f:
+        metadata = json.load(f)
+    metadata["frames_count"] = total_frames
+    metadata["frame_profile"] = frame_profile
+    metadata["sample_mode"] = sample_mode
+    with open(metadata_path, "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2)
-
-    # Save polyline
-    polyline_data = {
-        "encoded": route.get("polyline", {}).get("encodedPolyline", ""),
-        "encoded5": route.get("polyline", {}).get("encodedPolyline5", ""),
-    }
-    with open(routes_dir / "polyline.json", "w", encoding="utf-8") as f:
-        json.dump(polyline_data, f, indent=2)
-
-    # Save raw guidance steps
-    with open(routes_dir / "guidance.json", "w", encoding="utf-8") as f:
-        json.dump({"steps": steps}, f, indent=2)
 
     # Save samples.jsonl
     samples_file = output_dir / "samples.jsonl"

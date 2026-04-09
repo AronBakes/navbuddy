@@ -7,10 +7,21 @@ import type {
   Stats,
 } from "./types";
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(path);
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  return res.json();
+async function get<T>(path: string, retries = 2): Promise<T> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      return res.json();
+    } catch (e) {
+      if (i < retries) {
+        await new Promise((r) => setTimeout(r, 1000));
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error("unreachable");
 }
 
 export const api = {

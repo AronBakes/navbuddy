@@ -28,3 +28,10 @@ streetview:
 routing:
   engine: google           # google (only option for now)
   # city: null             # default city prefix for route IDs
+
+# Canonical modality colors — use these consistently in charts, docs, and UI
+modality_colors:
+  prior:          "#d08020"   # warm orange
+  augment_prior:  "#20a070"   # sage green
+  image_prior:    "#8050e0"   # purple
+  video_prior:    "#4070e0"   # blue

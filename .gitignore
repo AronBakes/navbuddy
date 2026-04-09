@@ -65,6 +65,7 @@ data/samples.jsonl
 data/manifest.json
 
 # Prevent stray result files in repo root
+/results/
 /results_*.jsonl
 /ratings.json
 
@@ -89,6 +90,7 @@ htmlcov/
 # Build artifacts
 *.whl
 *.tar.gz
+*.zip
 
 # Playwright
 playwright-report/
@@ -97,13 +99,19 @@ test-results/
 # Dashboard build/runtime artifacts
 dashboard/.next/
 dashboard/node_modules/
-dashboard/undefined:/
 dashboard/next-env.d.ts
 
 # Temporary files
 tmp/
 temp/
 *.tmp
+
+# Scratch/test configs (not part of the shipped config set)
+config/matrix_*.yaml
+
+# Internal docs (audit notes, implementation plans)
+docs/audit/
+docs/plans/
 
 # Archived/experimental landing page variants (local only)
 docs/index_*.html

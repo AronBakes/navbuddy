@@ -43,30 +43,18 @@ def create_app(data_root: Path) -> FastAPI:
     def _load():
         nonlocal samples, samples_by_id, canonical_gt, split_config, models_config, results_by_sample
 
-        # Samples — load from gt_split_samples.jsonl and samples.jsonl,
-        # including city subdirectories (e.g. data/brisbane/samples.jsonl)
+        # Samples — load from gt_split_samples.jsonl and samples.jsonl (flat under data_root)
         seen_ids: set = set()
-        sample_files = []
         for name in ["gt_split_samples.jsonl", "samples.jsonl"]:
             p = data_root / name
-            if p.exists():
-                sample_files.append(p)
-        # Search city subdirectories
-        for sub in sorted(data_root.iterdir()):
-            if sub.is_dir():
-                p = sub / "samples.jsonl"
-                if p.exists():
-                    sample_files.append(p)
-        for sp in sample_files:
-            city_name = sp.parent.name if sp.parent != data_root else ""
-            with open(sp) as f:
+            if not p.exists():
+                continue
+            with open(p) as f:
                 for line in f:
                     if line.strip():
                         s = json.loads(line)
                         sid = s.get("id", "")
                         if sid and sid not in seen_ids:
-                            if city_name and "_city" not in s:
-                                s["_city"] = city_name
                             samples.append(s)
                             seen_ids.add(sid)
         samples_by_id = {s["id"]: s for s in samples}
@@ -175,16 +163,11 @@ def create_app(data_root: Path) -> FastAPI:
         city = s.get("_city", _city_from_id(sample_id))
         frames = s.get("images", {}).get("frames", [])
         # Auto-discover additional frames on disk (e.g. sparse4 frames not in samples.jsonl)
-        # Search data_root and city subdirectories
         prefix = f"{sample_id}_"
         on_disk: list[str] = []
-        for search_dir in [data_root / "frames"] + [
-            sub / "frames" for sub in data_root.iterdir() if sub.is_dir()
-        ]:
-            if search_dir.is_dir():
-                on_disk.extend(
-                    f"frames/{p.name}" for p in search_dir.glob(f"{prefix}*.jpg")
-                )
+        frames_dir = data_root / "frames"
+        if frames_dir.is_dir():
+            on_disk = [f"frames/{p.name}" for p in frames_dir.glob(f"{prefix}*.jpg")]
         on_disk = sorted(set(on_disk))
         if len(on_disk) > len(frames):
             frames = on_disk
@@ -233,16 +216,8 @@ def create_app(data_root: Path) -> FastAPI:
     # ── Static file serving (frames + maps) ──
 
     def _find_file(subdir: str, filename: str) -> Path:
-        """Search data_root and city subdirectories for a file."""
-        path = data_root / subdir / filename
-        if path.exists():
-            return path
-        for sub in data_root.iterdir():
-            if sub.is_dir():
-                p = sub / subdir / filename
-                if p.exists():
-                    return p
-        return path  # return default (will 404)
+        """Find a file under data_root/{subdir}/."""
+        return data_root / subdir / filename
 
     @app.get("/api/frames/{filename:path}")
     def get_frame(filename: str):

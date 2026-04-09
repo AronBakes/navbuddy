@@ -75,14 +75,16 @@ STRUCTURED_OUTPUT_SCHEMA: Dict[str, Any] = {
                 "next_action": {
                     "type": "string",
                     "enum": [
-                        "turn_left", "turn_right", "straight",
+                        "turn_left", "turn_right",
+                        "straight", "continue", "keep_straight",
                         "slight_left", "slight_right",
                         "sharp_left", "sharp_right",
                         "merge_left", "merge_right", "merge",
                         "keep_left", "keep_right",
                         "fork_left", "fork_right",
                         "ramp_left", "ramp_right",
-                        "roundabout", "uturn",
+                        "uturn_left", "uturn_right",
+                        "roundabout", "roundabout_left", "roundabout_right",
                     ],
                 },
                 "relevant_landmarks": {
@@ -474,7 +476,7 @@ def load_icl_examples(
 
     Args:
         examples_path: Path to icl_examples.jsonl (list of sample_ids).
-        data_root: Root data directory containing city subdirs.
+        data_root: Root data directory (e.g., ./data).
         example_indices: 1-based indices of examples to use (e.g. [1,2]).
             If None, returns all.
 
@@ -495,31 +497,21 @@ def load_icl_examples(
     if example_indices:
         entries = [entries[i - 1] for i in example_indices if 0 < i <= len(entries)]
 
-    # Load all samples across cities
+    # Load all samples (flat structure under data_root)
     samples_by_id: Dict[str, Dict[str, Any]] = {}
-    for city_dir in data_root.iterdir():
-        samples_file = city_dir / "samples.jsonl"
-        if samples_file.is_file():
+    for samples_file in [data_root / "samples.jsonl", data_root / "gt_split_samples.jsonl"]:
+        if samples_file.exists():
             for line in open(samples_file):
                 if line.strip():
                     s = _json.loads(line)
-                    s["_city"] = city_dir.name
-                    samples_by_id[s["id"]] = s
-    # Also check gt_split
-    gt_split = data_root / "gt_split_samples.jsonl"
-    if gt_split.exists():
-        for line in open(gt_split):
-            if line.strip():
-                s = _json.loads(line)
-                if s["id"] not in samples_by_id:
-                    s["_city"] = s["id"].split("_route")[0]
-                    samples_by_id[s["id"]] = s
+                    if s["id"] not in samples_by_id:
+                        samples_by_id[s["id"]] = s
 
     # Load GT instructions
     gt_instrs: Dict[str, str] = {}
-    gt_file = data_root.parent / "results" / "ground_truth.jsonl"
+    gt_file = data_root / "canonical_gt.jsonl"
     if not gt_file.exists():
-        gt_file = Path("results") / "ground_truth.jsonl"
+        gt_file = Path("data") / "canonical_gt.jsonl"
     if gt_file.exists():
         for line in open(gt_file):
             if line.strip():
@@ -559,8 +551,8 @@ def load_icl_examples(
         # Select representative frame
         frame_idx = ICL_FRAME_OVERRIDE.get(sid, -1)
         frame_rel = frames[frame_idx] if frames else None
-        frame_path = data_root / city / frame_rel if frame_rel else None
-        overhead_path = data_root / city / overhead if overhead else None
+        frame_path = data_root / frame_rel if frame_rel else None
+        overhead_path = data_root / overhead if overhead else None
 
         resolved.append({
             "sample_id": sid,
@@ -1046,88 +1038,6 @@ class OpenRouterClient:
 
         return output, metadata
 
-    def infer_with_rag(
-        self,
-        model_id: str,
-        instruction: str,
-        frame_paths: list,
-        overhead_path: str | None,
-        experience_store,
-        k: int = 3,
-        min_reward: float = 0.6,
-        maneuver: str | None = None,
-    ) -> tuple[VLMOutput, InferenceMetadata]:
-        """Inference with RAG: retrieve similar examples from ChromaDB as few-shot demos.
-
-        Args:
-            model_id: Model to use
-            instruction: Navigation instruction
-            frame_paths: List of frame image paths
-            overhead_path: Overhead map path
-            experience_store: ExperienceStore instance
-            k: Number of examples to retrieve
-            min_reward: Minimum reward threshold for retrieved examples
-            maneuver: Expected maneuver type (for diversity filtering)
-
-        Returns:
-            Tuple of (VLMOutput, InferenceMetadata)
-        """
-        from navbuddy.architectures.navclip.model import text_to_embedding, image_to_embedding, _truncate
-
-        # Compute query embedding from last frame + instruction
-        image_emb = [0.0] * 256
-        if frame_paths:
-            last_frame = str(frame_paths[-1])
-            image_emb = image_to_embedding(last_frame, dim=256)
-        text_emb = text_to_embedding(instruction, dim=256)
-        segformer_part = [0.0] * 384  # Skip SegFormer at query time for speed
-        query_emb = image_emb + text_emb + segformer_part
-
-        # Query ChromaDB for similar high-reward examples
-        where_filter = {"reward_composite": {"$gte": min_reward}}
-        results = experience_store.query_similar(
-            embedding=query_emb,
-            n_results=k * 3,  # over-fetch for filtering
-            where=where_filter,
-        )
-
-        # Diversity: pick up to 2 same-maneuver + 1 different
-        examples = []
-        same_maneuver = []
-        diff_maneuver = []
-        for r in results:
-            meta = r.get("metadata", {})
-            doc = r.get("document", "")
-            entry = {
-                "instruction": meta.get("instruction", ""),
-                "enhanced_output": doc,
-                "maneuver": meta.get("maneuver", "unknown"),
-            }
-            if maneuver and meta.get("maneuver", "").upper() == maneuver.upper():
-                same_maneuver.append(entry)
-            else:
-                diff_maneuver.append(entry)
-
-        examples = same_maneuver[:2] + diff_maneuver[:1]
-        if len(examples) < k:
-            # Fill remaining from whichever pool has more
-            remaining = (same_maneuver[2:] + diff_maneuver[1:])[:k - len(examples)]
-            examples.extend(remaining)
-        examples = examples[:k]
-
-        # Build augmented prompt and call existing infer
-        augmented_prompt = build_rag_prompt(SYSTEM_PROMPT, examples)
-
-        # Use the existing infer method but with modified system prompt
-        return self.infer(
-            model_id=model_id,
-            instruction=instruction,
-            frame_paths=frame_paths,
-            overhead_path=Path(overhead_path) if overhead_path else None,
-            system_prompt=augmented_prompt,
-        )
-
-
 def _load_pil_image(path: Path, augment: Optional[str] = None):
     """Load an image as RGB PIL.Image, optionally applying augmentation."""
     try:
@@ -1578,14 +1488,9 @@ def run_inference(
     if data_root is None:
         data_root = dataset_path.parent
 
-    def _resolve_path(rel: str, city: str | None) -> Path:
-        """Resolve a relative path, falling back to data_root/{city}/rel for multi-city datasets."""
-        p = data_root / rel
-        if not p.exists() and city:
-            city_p = data_root / city / rel
-            if city_p.exists():
-                return city_p
-        return p
+    def _resolve_path(rel: str, city: str | None = None) -> Path:
+        """Resolve a relative path under data_root."""
+        return data_root / rel
 
     results: List[InferenceResult] = []
 

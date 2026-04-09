@@ -1,0 +1,1433 @@
+[
+  {
+    "id": "brisbane_route78pq19zcm_step002",
+    "nav": "Turn left onto Benson St/Coronation Dr/State Route 33\nContinue to follow Coronation Dr/State Route 33",
+    "gt": "Turn left past the Footmotion store at the green Benson St sign.",
+    "gt_action": "turn_left",
+    "models": {
+      "gpt-4o-mini": {
+        "instruction": "Turn left onto Benson St at the traffic lights near ANZ.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "ANZ"
+        ],
+        "lanes": 2
+      },
+      "gpt-5.4": {
+        "instruction": "Keep left by the ANZ bank, then turn left onto Benson Street at the lights.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "ANZ bank",
+          "Benson St sign"
+        ],
+        "lanes": 3
+      },
+      "gpt-4.1-mini": {
+        "instruction": "Turn left onto Benson St at the traffic lights, keep left lane.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "ANZ bank",
+          "Footmotion store"
+        ],
+        "lanes": 3
+      },
+      "gemini-3-flash-preview": {
+        "instruction": "From the left lane, turn left onto Benson Street at the green City sign.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "ANZ bank",
+          "FootMotion",
+          "directional_sign",
+          "traffic_light"
+        ],
+        "lanes": 3
+      },
+      "gemini-3.1-pro-preview": {
+        "instruction": "Use the left lane to turn left at the traffic light.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 2
+      },
+      "claude-sonnet-4.6": {
+        "instruction": "Turn left onto Benson St following the State Route 33 City sign past ANZ bank.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "ANZ bank",
+          "route_33_sign",
+          "Footmotion store"
+        ],
+        "lanes": 3
+      },
+      "claude-opus-4.6": {
+        "instruction": "Use the left lane and turn left onto Benson St following the City/Route 33 sign past Footmotion store.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "Footmotion store",
+          "Benson Street direction sign",
+          "route_33_sign",
+          "high_rise_buildings"
+        ],
+        "lanes": 3
+      },
+      "claude-haiku-4.5": {
+        "instruction": "Turn left onto Benson St at the traffic light, following Coronation Drive.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "Benson St street sign",
+          "high-rise buildings ahead"
+        ],
+        "lanes": 3
+      },
+      "grok-4.1-fast": {
+        "instruction": "Turn left onto Benson St at traffic lights past ANZ bank.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "benson_st_sign",
+          "anz_bank"
+        ],
+        "lanes": 2
+      },
+      "grok-4.20-beta": {
+        "instruction": "Turn left at green traffic lights onto Benson St",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "ANZ bank"
+        ],
+        "lanes": 3
+      },
+      "qwen2.5-vl-72b-instruct": {
+        "instruction": "Turn left at ANZ bank onto Benson St/Coronation Dr.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "ANZ bank",
+          "traffic_light"
+        ],
+        "lanes": 3
+      }
+    },
+    "gt_lc": "no",
+    "gt_lanes": 3
+  },
+  {
+    "id": "brisbane_route0bmpfsqys_step005",
+    "nav": "Turn right onto Marshall Rd/State Route 10 Continue to follow Marshall Rd",
+    "gt": "From the right lane, turn right onto Marshall Road at the traffic lights under the bridge.",
+    "gt_action": "turn_right",
+    "models": {
+      "gpt-4o-mini": {
+        "instruction": "Turn right onto Marshall Rd at the traffic signal.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_signal"
+        ],
+        "lanes": 3
+      },
+      "gpt-5.4": {
+        "instruction": "From the right lane, turn right at the green Marshall Rd sign.",
+        "action": "turn_right",
+        "lc": "no",
+        "landmarks": [
+          "overpass",
+          "green_road_sign"
+        ],
+        "lanes": 3
+      },
+      "gpt-4.1-mini": {
+        "instruction": "Keep right and turn right onto Marshall Rd under the overpass",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "overpass",
+          "green directional signs"
+        ],
+        "lanes": 2
+      },
+      "gemini-3-flash-preview": {
+        "instruction": "Use the right lane to turn right onto Marshall Road under the bridge towards State Route 10.",
+        "action": "turn_right",
+        "lc": "no",
+        "landmarks": [
+          "bridge",
+          "green_sign",
+          "traffic_light"
+        ],
+        "lanes": 2
+      },
+      "gemini-3.1-pro-preview": {
+        "instruction": "At the traffic lights, turn right onto Marshall Road.",
+        "action": "turn_right",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "overpass"
+        ],
+        "lanes": 2
+      },
+      "claude-sonnet-4.6": {
+        "instruction": "Move to right lane, then turn right onto Marshall Rd at the green overhead sign.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "overhead_sign"
+        ],
+        "lanes": 3
+      },
+      "claude-opus-4.6": {
+        "instruction": "Use right lane and turn right onto Marshall Rd at the green overhead sign past the overpass.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "overhead_sign",
+          "overpass",
+          "retaining_wall",
+          "street_lights"
+        ],
+        "lanes": 3
+      },
+      "claude-haiku-4.5": {
+        "instruction": "Turn right onto Marshall Rd/State Route 10, keep right lane.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "overpass",
+          "elevated structure"
+        ],
+        "lanes": 2
+      },
+      "grok-4.1-fast": {
+        "instruction": "Turn right at traffic lights onto Marshall Rd.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 4
+      },
+      "grok-4.20-beta": {
+        "instruction": "Turn right after concrete overpass onto Marshall Rd",
+        "action": "turn_right",
+        "lc": "no",
+        "landmarks": [
+          "concrete_overpass",
+          "traffic_lights"
+        ],
+        "lanes": 3
+      },
+      "qwen2.5-vl-72b-instruct": {
+        "instruction": "Turn right onto Marshall Rd after the traffic light, follow the right lane.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 2
+      }
+    },
+    "gt_lc": "no",
+    "gt_lanes": 3
+  },
+  {
+    "id": "brisbane_route8yc1y0ymd_step002",
+    "nav": "Continue onto Inner City Byp (signs for Clem Jones Tunnel)",
+    "gt": "Stay in right lane for Inner City Byp, signs for Clem Jones Tunnel ahead",
+    "gt_action": "straight",
+    "models": {
+      "gpt-4o-mini": {
+        "instruction": "Continue onto Inner City Byp, follow signs for Clem Jones Tunnel.",
+        "action": "merge_left",
+        "lc": "yes",
+        "landmarks": [
+          "sign_for Clem Jones Tunnel",
+          "road signs"
+        ],
+        "lanes": 3
+      },
+      "gpt-5.4": {
+        "instruction": "Keep right at the overhead signs for Clem Jones Tunnel onto Inner City Bypass.",
+        "action": "keep_right",
+        "lc": "yes",
+        "landmarks": [
+          "overhead_signs",
+          "overpass"
+        ],
+        "lanes": 3
+      },
+      "gpt-4.1-mini": {
+        "instruction": "Stay in the centre lane and continue onto Inner City Bypass towards Clem Jones Tunnel.",
+        "action": "straight",
+        "lc": "no",
+        "landmarks": [
+          "road signs for Sunshine Coast and Gold Coast",
+          "speed limit sign 70",
+          "concrete barrier"
+        ],
+        "lanes": 3
+      },
+      "gemini-3-flash-preview": {
+        "instruction": "Keep right at the fork following signs for Clem Jones Tunnel and Gold Coast.",
+        "action": "fork_right",
+        "lc": "no",
+        "landmarks": [
+          "overhead_signs",
+          "directional_road_markings"
+        ],
+        "lanes": 3
+      },
+      "gemini-3.1-pro-preview": {
+        "instruction": "Keep left under the overhead signs to stay on the Inner City Bypass.",
+        "action": "keep_left",
+        "lc": "no",
+        "landmarks": [
+          "overhead sign"
+        ],
+        "lanes": 3
+      },
+      "claude-sonnet-4.6": {
+        "instruction": "Keep left following signs for Clem Jones Tunnel, exit in 100m.",
+        "action": "keep_left",
+        "lc": "yes",
+        "landmarks": [
+          "highway_signs",
+          "overhead_gantry_signs"
+        ],
+        "lanes": 3
+      },
+      "claude-opus-4.6": {
+        "instruction": "Stay in the left lanes following signs for Sunshine Coast, avoiding the right exit to Gold Coast.",
+        "action": "straight",
+        "lc": "no",
+        "landmarks": [
+          "overhead_sign_Sunshine_Coast",
+          "overhead_sign_Gold_Coast_exit",
+          "overpass"
+        ],
+        "lanes": 3
+      },
+      "claude-haiku-4.5": {
+        "instruction": "Continue straight onto Inner City Bypass following Clem Jones Tunnel signs.",
+        "action": "straight",
+        "lc": "no",
+        "landmarks": [
+          "overhead_gantry_signs",
+          "tunnel_approach_signage"
+        ],
+        "lanes": 3
+      },
+      "grok-4.1-fast": {
+        "instruction": "Continue straight onto Inner City Byp following overhead signs for Clem Jones Tunnel.",
+        "action": "straight",
+        "lc": "no",
+        "landmarks": [
+          "overhead_signs"
+        ],
+        "lanes": 3
+      },
+      "grok-4.20-beta": {
+        "instruction": "Continue straight for Inner City Byp, signs for Clem Jones Tunnel",
+        "action": "straight",
+        "lc": "no",
+        "landmarks": [
+          "overhead_signs",
+          "green_signs"
+        ],
+        "lanes": 3
+      },
+      "qwen2.5-vl-72b-instruct": {
+        "instruction": "Continue straight onto Inner City Byp, follow signs for Clem Jones Tunnel.",
+        "action": "straight",
+        "lc": "no",
+        "landmarks": [
+          "road_sign"
+        ],
+        "lanes": 3
+      }
+    },
+    "gt_lc": "no",
+    "gt_lanes": 3
+  },
+  {
+    "id": "brisbane_route8yc1y0ymd_step003",
+    "nav": "Take the exit towards Allison St",
+    "gt": "Merge left to take the exit towards Allison St, past the green overhead sign.",
+    "gt_action": "ramp_left",
+    "models": {
+      "gpt-4o-mini": {
+        "instruction": "Take the exit towards Allison St at traffic sign.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_sign"
+        ],
+        "lanes": 3
+      },
+      "gpt-5.4": {
+        "instruction": "Keep right for the Allison St exit, passing the parking sign on the left.",
+        "action": "keep_right",
+        "lc": "yes",
+        "landmarks": [
+          "parking_sign"
+        ],
+        "lanes": 3
+      },
+      "gpt-4.1-mini": {
+        "instruction": "Take the left exit lane towards Allison St, following overhead sign.",
+        "action": "keep_left",
+        "lc": "yes",
+        "landmarks": [
+          "overhead sign",
+          "orange wedge sign"
+        ],
+        "lanes": 3
+      },
+      "gemini-3-flash-preview": {
+        "instruction": "Keep left and take the exit towards Allison St after passing the green overhead sign.",
+        "action": "fork_left",
+        "lc": "no",
+        "landmarks": [
+          "overhead_sign",
+          "street_light"
+        ],
+        "lanes": 3
+      },
+      "gemini-3.1-pro-preview": {
+        "instruction": "Use the left lane to take the exit towards Allison St near the overhead sign.",
+        "action": "fork_left",
+        "lc": "yes",
+        "landmarks": [
+          "overhead_sign",
+          "concrete_barrier"
+        ],
+        "lanes": 2
+      },
+      "claude-sonnet-4.6": {
+        "instruction": "Keep left to take the exit towards Allison St, past the green overhead sign.",
+        "action": "fork_left",
+        "lc": "yes",
+        "landmarks": [
+          "overhead_sign"
+        ],
+        "lanes": 3
+      },
+      "claude-opus-4.6": {
+        "instruction": "Stay in the left lane and take the exit towards Allison St past the light pole.",
+        "action": "keep_left",
+        "lc": "yes",
+        "landmarks": [
+          "street_light_pole",
+          "concrete_barrier"
+        ],
+        "lanes": 3
+      },
+      "claude-haiku-4.5": {
+        "instruction": "Take the exit right towards Allison St, keep right lane.",
+        "action": "exit_right",
+        "lc": "yes",
+        "landmarks": [
+          "Inner City Bypass",
+          "Abbotsford Road"
+        ],
+        "lanes": 3
+      },
+      "grok-4.1-fast": {
+        "instruction": "Take right exit towards Allison St past cattle sign.",
+        "action": "fork_right",
+        "lc": "no",
+        "landmarks": [
+          "cattle_sign"
+        ],
+        "lanes": 4
+      },
+      "grok-4.20-beta": {
+        "instruction": "Keep left and take exit towards Allison St",
+        "action": "merge_left",
+        "lc": "yes",
+        "landmarks": [
+          "exit sign"
+        ],
+        "lanes": 3
+      },
+      "qwen2.5-vl-72b-instruct": {
+        "instruction": "Take the right exit towards Allison St, near Queensland Sports Medical Centre.",
+        "action": "fork_right",
+        "lc": "yes",
+        "landmarks": [
+          "Queensland Sports Medical Centre"
+        ],
+        "lanes": 2
+      }
+    },
+    "gt_lc": "yes",
+    "gt_lanes": 3
+  },
+  {
+    "id": "brisbane_route0bmpfsqys_step007",
+    "nav": "Slight right onto Evans Rd/State Route 20",
+    "gt": "Merge into the right turning lanes, then turn right and continue past the BP petrol station.",
+    "gt_action": "slight_right",
+    "models": {
+      "gpt-4o-mini": {
+        "instruction": "Slight right at McDonald's onto Evans Rd/State Route 20.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "McDonald's"
+        ],
+        "lanes": 3
+      },
+      "gpt-5.4": {
+        "instruction": "Keep right onto Evans Rd at the lights, passing McDonald's on your left.",
+        "action": "keep_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "mcdonalds"
+        ],
+        "lanes": 3
+      },
+      "gpt-4.1-mini": {
+        "instruction": "Keep left and slightly turn right onto Evans Rd/State Route 20.",
+        "action": "merge_right",
+        "lc": "yes",
+        "landmarks": [
+          "intersection",
+          "Salisbury Hotel Motel",
+          "McDonald's",
+          "Salisbury Recreation Reserve"
+        ],
+        "lanes": 4
+      },
+      "gemini-3-flash-preview": {
+        "instruction": "Pass the McDonald's on the left, then keep right at the fork onto Evans Road.",
+        "action": "keep_right",
+        "lc": "no",
+        "landmarks": [
+          "McDonald's",
+          "traffic_light"
+        ],
+        "lanes": 3
+      },
+      "gemini-3.1-pro-preview": {
+        "instruction": "At the traffic light past the McDonald's, make a completion slight right onto Evans Road.",
+        "action": "fork_right",
+        "lc": "no",
+        "landmarks": [
+          "McDonald's",
+          "traffic_light"
+        ],
+        "lanes": 3
+      },
+      "claude-sonnet-4.6": {
+        "instruction": "Bear slight right onto Evans Rd past McDonald's at the traffic lights.",
+        "action": "fork_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "mcdonalds"
+        ],
+        "lanes": 3
+      },
+      "claude-opus-4.6": {
+        "instruction": "Bear slight right onto Evans Rd past McDonald's on your left at the traffic lights.",
+        "action": "fork_right",
+        "lc": "no",
+        "landmarks": [
+          "McDonalds",
+          "traffic_light"
+        ],
+        "lanes": 3
+      },
+      "claude-haiku-4.5": {
+        "instruction": "Slight right onto Evans Rd/State Route 20 past the McDonald's.",
+        "action": "fork_right",
+        "lc": "no",
+        "landmarks": [
+          "McDonald's",
+          "traffic_light"
+        ],
+        "lanes": 2
+      },
+      "grok-4.1-fast": {
+        "instruction": "Slight right onto Evans Rd past McDonald's traffic lights.",
+        "action": "turn_right",
+        "lc": "no",
+        "landmarks": [
+          "mcdonalds",
+          "traffic_light"
+        ],
+        "lanes": 3
+      },
+      "grok-4.20-beta": {
+        "instruction": "Slight right onto Evans Rd after McDonald's",
+        "action": "turn_right",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "McDonald's"
+        ],
+        "lanes": 2
+      },
+      "qwen2.5-vl-72b-instruct": {
+        "instruction": "Slight right at McDonald's, move to the right lane.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "McDonald's"
+        ],
+        "lanes": 3
+      }
+    },
+    "gt_lc": "yes",
+    "gt_lanes": 4
+  },
+  {
+    "id": "brisbane_routex3kg7736w_step003",
+    "nav": "Merge onto Wickham St",
+    "gt": "Merge left onto Wickham St past the traffic lights and Centenary Place park.",
+    "gt_action": "merge",
+    "models": {
+      "gpt-4o-mini": {
+        "instruction": "Merge onto Wickham St while passing the bus stop ahead.",
+        "action": "merge_right",
+        "lc": "yes",
+        "landmarks": [
+          "bus_stop"
+        ],
+        "lanes": 3
+      },
+      "gpt-5.4": {
+        "instruction": "Keep left and merge onto Wickham Street beside the park and bus stop.",
+        "action": "keep_left",
+        "lc": "yes",
+        "landmarks": [
+          "park",
+          "bus_stop",
+          "bus"
+        ],
+        "lanes": 3
+      },
+      "gpt-4.1-mini": {
+        "instruction": "Merge left onto Wickham St just before the bus stop and park.",
+        "action": "merge_left",
+        "lc": "yes",
+        "landmarks": [
+          "bus_stop",
+          "park"
+        ],
+        "lanes": 3
+      },
+      "gemini-3-flash-preview": {
+        "instruction": "Keep left through the traffic lights to merge onto Wickham St after the park.",
+        "action": "merge_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "park",
+          "bus"
+        ],
+        "lanes": 3
+      },
+      "gemini-3.1-pro-preview": {
+        "instruction": "Keep left at the traffic lights to merge onto Wickham Street past the park.",
+        "action": "keep_left",
+        "lc": "no",
+        "landmarks": [
+          "park",
+          "traffic_light"
+        ],
+        "lanes": 2
+      },
+      "claude-sonnet-4.6": {
+        "instruction": "Merge right onto Wickham St past the traffic lights near Centenary Place park.",
+        "action": "merge_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "park"
+        ],
+        "lanes": 3
+      },
+      "claude-opus-4.6": {
+        "instruction": "Keep left and merge onto Wickham St, past the bus stop and park on your right.",
+        "action": "merge_left",
+        "lc": "yes",
+        "landmarks": [
+          "bus",
+          "street_light",
+          "park"
+        ],
+        "lanes": 3
+      },
+      "claude-haiku-4.5": {
+        "instruction": "Merge right onto Wickham St past the Robert Burns Memorial.",
+        "action": "merge_right",
+        "lc": "yes",
+        "landmarks": [
+          "Robert Burns Memorial",
+          "Centenary Place",
+          "traffic_light"
+        ],
+        "lanes": 3
+      },
+      "grok-4.1-fast": {
+        "instruction": "Merge right onto Wickham St after traffic lights.",
+        "action": "merge_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 4
+      },
+      "grok-4.20-beta": {
+        "instruction": "Merge right onto Wickham St, keep right",
+        "action": "merge_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "bus"
+        ],
+        "lanes": 2
+      },
+      "qwen2.5-vl-72b-instruct": {
+        "instruction": "Merge left onto Wickham St near Fortitude Valley Parklands.",
+        "action": "merge_left",
+        "lc": "yes",
+        "landmarks": [
+          "Fortitude Valley Parklands",
+          "bus_stop"
+        ],
+        "lanes": 2
+      }
+    },
+    "gt_lc": "yes",
+    "gt_lanes": 3
+  },
+  {
+    "id": "brisbane_route78pq19zcm_step001",
+    "nav": "Sharp left onto High St/State Route 33",
+    "gt": "Sharp left onto High St after church",
+    "gt_action": "sharp_left",
+    "models": {
+      "gpt-4o-mini": {
+        "instruction": "Sharp left onto High St, after St. Thomas Anglican Church.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "St. Thomas Anglican Church"
+        ],
+        "lanes": 3
+      },
+      "gpt-5.4": {
+        "instruction": "Keep left and make the sharp left at the pedestrian crossing onto High Street.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "pedestrian_crossing",
+          "give_way_sign"
+        ],
+        "lanes": 2
+      },
+      "gpt-4.1-mini": {
+        "instruction": "Make a sharp left onto High St at the pedestrian crossing ahead.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "pedestrian_crossing",
+          "brick building"
+        ],
+        "lanes": 2
+      },
+      "gemini-3-flash-preview": {
+        "instruction": "Keep left at the church to take a sharp left onto High St/State Route 33.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "church",
+          "school_crossing_sign",
+          "green_directional_sign"
+        ],
+        "lanes": 2
+      },
+      "gemini-3.1-pro-preview": {
+        "instruction": "Use the left lane to make a sharp left at the traffic lights.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 2
+      },
+      "claude-sonnet-4.6": {
+        "instruction": "Turn sharp left onto High St past the church with the cross steeple.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "church_steeple",
+          "pedestrian_crossing_sign",
+          "traffic_light"
+        ],
+        "lanes": 3
+      },
+      "claude-opus-4.6": {
+        "instruction": "Use left lane, sharp left onto High St past the pedestrian crossing sign and brick building.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "pedestrian_crossing_sign",
+          "street_lights",
+          "brick_building"
+        ],
+        "lanes": 2
+      },
+      "claude-haiku-4.5": {
+        "instruction": "Sharp left onto High St/State Route 33 at brick building junction.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "brick_building",
+          "street_lights",
+          "trees"
+        ],
+        "lanes": 2
+      },
+      "grok-4.1-fast": {
+        "instruction": "Sharp left onto High St at green sign past church steeple.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "sign",
+          "church"
+        ],
+        "lanes": 2
+      },
+      "grok-4.20-beta": {
+        "instruction": "Sharp left onto High St after church",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "church"
+        ],
+        "lanes": 2
+      },
+      "qwen2.5-vl-72b-instruct": {
+        "instruction": "Sharp left at traffic island onto High St/State Route 33.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_island",
+          "church"
+        ],
+        "lanes": 2
+      }
+    },
+    "gt_lc": "yes",
+    "gt_lanes": 2
+  },
+  {
+    "id": "canberra_route4jpbakhf7_step002",
+    "nav": "At the roundabout, take the 1st exit onto Yarra Glen",
+    "gt": "Move to the left lane to take the first exit at the roundabout onto Yarra Glen.",
+    "gt_action": "roundabout",
+    "models": {
+      "gpt-4o-mini": {
+        "instruction": "At the roundabout, take the 1st exit onto Yarra Glen.",
+        "action": "turn_right",
+        "lc": "no",
+        "landmarks": [
+          "bus_lane_sign",
+          "traffic_sign"
+        ],
+        "lanes": 2
+      },
+      "gpt-5.4": {
+        "instruction": "Keep left and take the first exit at the roundabout, passing the roundabout signs.",
+        "action": "keep_left",
+        "lc": "yes",
+        "landmarks": [
+          "roundabout_sign"
+        ],
+        "lanes": 1
+      },
+      "gpt-4.1-mini": {
+        "instruction": "At roundabout, take 1st exit left from the left-only lane",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "left-only lane marking",
+          "roundabout"
+        ],
+        "lanes": 2
+      },
+      "gemini-3-flash-preview": {
+        "instruction": "At the roundabout, stay in the left lane to take the first exit onto Yarra Glen.",
+        "action": "roundabout",
+        "lc": "no",
+        "landmarks": [
+          "roundabout",
+          "lane_markings"
+        ],
+        "lanes": 2
+      },
+      "gemini-3.1-pro-preview": {
+        "instruction": "Use the left lane to take the first exit at the roundabout.",
+        "action": "roundabout",
+        "lc": "no",
+        "landmarks": [
+          "give_way_sign"
+        ],
+        "lanes": 2
+      },
+      "claude-sonnet-4.6": {
+        "instruction": "At the roundabout ahead, take the 1st exit onto Yarra Glen.",
+        "action": "roundabout",
+        "lc": "no",
+        "landmarks": [],
+        "lanes": 2
+      },
+      "claude-opus-4.6": {
+        "instruction": "Use left lane at the roundabout, take 1st exit onto Yarra Glen past street lights.",
+        "action": "roundabout",
+        "lc": "no",
+        "landmarks": [
+          "street_lights",
+          "roundabout_sign",
+          "lane_markings"
+        ],
+        "lanes": 2
+      },
+      "claude-haiku-4.5": {
+        "instruction": "At roundabout, take 1st exit onto Yarra Glen via Adelaide Ave.",
+        "action": "roundabout",
+        "lc": "no",
+        "landmarks": [
+          "roundabout",
+          "street_lights",
+          "open_parkland"
+        ],
+        "lanes": 2
+      },
+      "grok-4.1-fast": {
+        "instruction": "At roundabout after bus lane sign, take 1st exit right onto Yarra Glen.",
+        "action": "roundabout",
+        "lc": "no",
+        "landmarks": [
+          "bus_lane_sign",
+          "give_way_sign"
+        ],
+        "lanes": 2
+      },
+      "grok-4.20-beta": {
+        "instruction": "At roundabout take 1st exit onto Yarra Glen",
+        "action": "roundabout",
+        "lc": "no",
+        "landmarks": [],
+        "lanes": 2
+      },
+      "qwen2.5-vl-72b-instruct": {
+        "instruction": "At the roundabout, take the 1st exit onto Yarra Glen, following the right lane.",
+        "action": "roundabout",
+        "lc": "no",
+        "landmarks": [
+          "roundabout",
+          "Yarra Glen Bus Onramp"
+        ],
+        "lanes": 2
+      }
+    },
+    "gt_lc": "yes",
+    "gt_lanes": 2
+  },
+  {
+    "id": "canberra_routetrhpa3ev6_step009",
+    "nav": "Turn left onto Aikman Dr",
+    "gt": "Turn left onto Aikman Drive from the left-turn lane behind the blue Honda.",
+    "gt_action": "turn_left",
+    "models": {
+      "gpt-4o-mini": {
+        "instruction": "Turn left at the traffic lights onto Aikman Dr.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "END 40 AREA sign"
+        ],
+        "lanes": 2
+      },
+      "gpt-5.4": {
+        "instruction": "Turn left onto Aikman Drive at the lights from the left lane.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "speed_sign"
+        ],
+        "lanes": 2
+      },
+      "gpt-4.1-mini": {
+        "instruction": "Turn left onto Aikman Dr at traffic lights after the speed limit ends",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "end 40 area sign"
+        ],
+        "lanes": 2
+      },
+      "gemini-3-flash-preview": {
+        "instruction": "At the traffic lights, use the left lane to turn left onto Aikman Drive.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "left turn arrow road marking",
+          "speed limit signs"
+        ],
+        "lanes": 3
+      },
+      "gemini-3.1-pro-preview": {
+        "instruction": "Use the left lane to turn left at the traffic light onto Aikman Drive.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 2
+      },
+      "claude-sonnet-4.6": {
+        "instruction": "Turn left onto Aikman Dr at the traffic lights, past the End 40 zone sign.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "speed_sign"
+        ],
+        "lanes": 2
+      },
+      "claude-opus-4.6": {
+        "instruction": "At traffic lights past the End 40 Area sign, turn left onto Aikman Dr.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "speed_sign_end_40",
+          "bus"
+        ],
+        "lanes": 2
+      },
+      "claude-haiku-4.5": {
+        "instruction": "Turn left onto Aikman Dr past the END 40 AREA sign.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "END 40 AREA sign",
+          "street_light",
+          "Belconnen Bikeway"
+        ],
+        "lanes": 2
+      },
+      "grok-4.1-fast": {
+        "instruction": "Turn left onto Aikman Dr at upcoming traffic lights.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 2
+      },
+      "grok-4.20-beta": {
+        "instruction": "Turn left onto Aikman Dr at traffic lights",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 2
+      },
+      "qwen2.5-vl-72b-instruct": {
+        "instruction": "Turn left onto Aikman Dr after the traffic light and speed limit sign.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "speed_limit_sign"
+        ],
+        "lanes": 2
+      }
+    },
+    "gt_lc": "yes",
+    "gt_lanes": 2
+  },
+  {
+    "id": "sydney_routexs00ryrks_step000",
+    "nav": "Slight right onto O'Sullivan Rd\nGo through 1 roundabout",
+    "gt": "Slight right onto O'Sullivan Rd at traffic lights, continue through roundabout.",
+    "gt_action": "slight_right",
+    "models": {
+      "gpt-4o-mini": {
+        "instruction": "Slight right onto O'Sullivan Rd at the roundabout near shops.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "shops",
+          "roundabout"
+        ],
+        "lanes": 3
+      },
+      "gpt-5.4": {
+        "instruction": "Keep in the right lane and bear right at the splitter island onto O'Sullivan Road.",
+        "action": "keep_right",
+        "lc": "yes",
+        "landmarks": [
+          "splitter_island"
+        ],
+        "lanes": 3
+      },
+      "gpt-4.1-mini": {
+        "instruction": "Slight right at roundabout onto O'Sullivan Rd, keep left lane.",
+        "action": "merge_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "roundabout"
+        ],
+        "lanes": 3
+      },
+      "gemini-3-flash-preview": {
+        "instruction": "From the right lane, vear slight right onto O'Sullivan Rd at the traffic lights.",
+        "action": "fork_right",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "green_directional_sign"
+        ],
+        "lanes": 3
+      },
+      "gemini-3.1-pro-preview": {
+        "instruction": "At the traffic lights, stay in the right lane to continue slightly right onto O'Sullivan Road.",
+        "action": "fork_right",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 2
+      },
+      "claude-sonnet-4.6": {
+        "instruction": "Bear slight right onto O'Sullivan Rd past the traffic lights ahead.",
+        "action": "fork_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 3
+      },
+      "claude-opus-4.6": {
+        "instruction": "At the traffic lights ahead, go through the roundabout and bear slight right onto O'Sullivan Rd.",
+        "action": "roundabout",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "commercial_buildings"
+        ],
+        "lanes": 3
+      },
+      "claude-haiku-4.5": {
+        "instruction": "Slight right onto O'Sullivan Rd, then proceed through roundabout ahead.",
+        "action": "turn_right",
+        "lc": "no",
+        "landmarks": [
+          "Woolworths Metro",
+          "STL Automotive",
+          "roundabout"
+        ],
+        "lanes": 2
+      },
+      "grok-4.1-fast": {
+        "instruction": "Slight right onto O'Sullivan Rd past white building on left.",
+        "action": "turn_right",
+        "lc": "no",
+        "landmarks": [
+          "building"
+        ],
+        "lanes": 2
+      },
+      "grok-4.20-beta": {
+        "instruction": "Slight right onto O'Sullivan Rd",
+        "action": "turn_right",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 2
+      },
+      "qwen2.5-vl-72b-instruct": {
+        "instruction": "Slight right onto O'Sullivan Rd near Fixate Fitness, then go through roundabout.",
+        "action": "turn_right",
+        "lc": "no",
+        "landmarks": [
+          "Fixate Fitness"
+        ],
+        "lanes": 3
+      }
+    },
+    "gt_lc": "no",
+    "gt_lanes": 2
+  },
+  {
+    "id": "sydney_routerp75re40e_step008",
+    "nav": "Turn left onto Greenknowe Ave",
+    "gt": "Turn left onto Greenknowe Ave",
+    "gt_action": "turn_left",
+    "models": {
+      "gpt-4o-mini": {
+        "instruction": "Turn left onto Greenknowe Ave at the upcoming intersection.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_sign",
+          "shops"
+        ],
+        "lanes": 3
+      },
+      "gpt-5.4": {
+        "instruction": "Use the left-turn lane and turn left at the lights onto Greenknowe Ave.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "pedestrian_crossing_sign",
+          "left_turn_only_sign"
+        ],
+        "lanes": 2
+      },
+      "gpt-4.1-mini": {
+        "instruction": "Turn left from the left lane onto Greenknowe Ave at the traffic light",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "left_turn_only_sign"
+        ],
+        "lanes": 2
+      },
+      "gemini-3-flash-preview": {
+        "instruction": "From the mandatory left lane, turn left onto Greenknowe Avenue at the traffic lights.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light",
+          "left_lane_must_turn_left_sign",
+          "pedestrian_crossing_sign"
+        ],
+        "lanes": 2
+      },
+      "gemini-3.1-pro-preview": {
+        "instruction": "Use the left lane to turn left at the traffic light onto Greenknowe Ave.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 2
+      },
+      "claude-sonnet-4.6": {
+        "instruction": "Turn left onto Greenknowe Ave; use the left lane as marked.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 3
+      },
+      "claude-opus-4.6": {
+        "instruction": "Use the left lane marked 'Left Lane Must Turn Left' to turn left onto Greenknowe Ave at traffic lights.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "left_turn_lane_sign",
+          "lane_arrows"
+        ],
+        "lanes": 2
+      },
+      "claude-haiku-4.5": {
+        "instruction": "Turn left onto Greenknowe Ave at the traffic light junction ahead.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "retail_storefronts",
+          "tree_lined_street"
+        ],
+        "lanes": 2
+      },
+      "grok-4.1-fast": {
+        "instruction": "Turn left onto Greenknowe Ave at traffic lights in left lane.",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 2
+      },
+      "grok-4.20-beta": {
+        "instruction": "Turn left onto Greenknowe Ave after traffic lights",
+        "action": "turn_left",
+        "lc": "no",
+        "landmarks": [
+          "traffic_light"
+        ],
+        "lanes": 2
+      },
+      "qwen2.5-vl-72b-instruct": {
+        "instruction": "Turn left into Greenknowe Ave near the roundabout ahead.",
+        "action": "turn_left",
+        "lc": "yes",
+        "landmarks": [
+          "roundabout",
+          "road_sign"
+        ],
+        "lanes": 2
+      }
+    },
+    "gt_lc": "no",
+    "gt_lanes": 2
+  },
+  {
+    "id": "melbourne_routes0madsybw_step000",
+    "nav": "Turn right towards Fitzroy St/Punt Rd/Wellington St",
+    "gt": "Move to the far-right lane and turn right at the traffic lights onto Fitzroy street.",
+    "gt_action": "turn_right",
+    "models": {
+      "gpt-4o-mini": {
+        "instruction": "Turn right towards Fitzroy St at the junction with St Kilda Road.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "advertisement"
+        ],
+        "lanes": 3
+      },
+      "gpt-5.4": {
+        "instruction": "In the right lane, turn right at the lights beside the large billboard.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_light",
+          "billboard"
+        ],
+        "lanes": 5
+      },
+      "gpt-4.1-mini": {
+        "instruction": "Turn right at the intersection near the large art mural on your left.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "large art mural"
+        ],
+        "lanes": 5
+      },
+      "gemini-3-flash-preview": {
+        "instruction": "Pass the large billboard on the left, then use the right lanes to turn right.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "billboard",
+          "traffic_light",
+          "bicycle_lane"
+        ],
+        "lanes": 4
+      },
+      "gemini-3.1-pro-preview": {
+        "instruction": "Change to the right lanes to turn right past the large billboard on your left.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "billboard"
+        ],
+        "lanes": 3
+      },
+      "claude-sonnet-4.6": {
+        "instruction": "In 188m, turn right towards Punt Road past the large billboard on the left.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "billboard"
+        ],
+        "lanes": 5
+      },
+      "claude-opus-4.6": {
+        "instruction": "Use the right lane and turn right at St Kilda Junction past the large billboard on your left.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "billboard",
+          "green_bike_lane",
+          "street_lights"
+        ],
+        "lanes": 5
+      },
+      "claude-haiku-4.5": {
+        "instruction": "Turn right onto Fitzroy St at the traffic lights ahead.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "traffic_lights",
+          "large_building_with_advertising_banner"
+        ],
+        "lanes": null
+      },
+      "grok-4.1-fast": {
+        "instruction": "Turn right after large billboard on left.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [],
+        "lanes": 3
+      },
+      "grok-4.20-beta": {
+        "instruction": "Turn right at the mural building into Fitzroy St",
+        "action": "turn_right",
+        "lc": "no",
+        "landmarks": [
+          "mural_building"
+        ],
+        "lanes": 3
+      },
+      "qwen2.5-vl-72b-instruct": {
+        "instruction": "Prepare to turn right after billboard, towards traffic lights and St Kilda Rd.",
+        "action": "turn_right",
+        "lc": "yes",
+        "landmarks": [
+          "billboard",
+          "traffic_light",
+          "St Kilda Rd"
+        ],
+        "lanes": 4
+      }
+    },
+    "gt_lc": "yes",
+    "gt_lanes": 4
+  }
+]

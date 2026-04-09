@@ -88,18 +88,26 @@ export default function SampleDetailPage() {
   const [filterCompany, setFilterCompany] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     setLoading(true);
+    setError(null);
     Promise.all([
       api.sample(id),
       api.sampleResults(id),
       api.canonicalGt(id).catch(() => null),
-    ]).then(([s, r, g]) => {
-      setSample(s);
-      setResults(r);
-      setGt(g);
-      setLoading(false);
-    });
+    ])
+      .then(([s, r, g]) => {
+        setSample(s);
+        setResults(r);
+        setGt(g);
+        setLoading(false);
+      })
+      .catch((e) => {
+        setError(`Failed to load sample: ${e.message}`);
+        setLoading(false);
+      });
   }, [id]);
 
   // Unique companies present in results
@@ -143,6 +151,20 @@ export default function SampleDetailPage() {
     }
     return counts;
   }, [results]);
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-[var(--color-text-muted)] text-sm">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 text-sm rounded-md border border-[var(--color-border)] hover:bg-[var(--color-card)] transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

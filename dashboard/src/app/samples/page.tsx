@@ -19,12 +19,19 @@ export default function SamplesPage() {
   const [maneuverFilter, setManeuverFilter] = useState(MANEUVERS_ALL);
   const [page, setPage] = useState(0);
 
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    Promise.all([api.samples(), api.stats()]).then(([s, st]) => {
-      setSamples(s);
-      setStats(st);
-      setLoading(false);
-    });
+    Promise.all([api.samples(), api.stats()])
+      .then(([s, st]) => {
+        setSamples(s);
+        setStats(st);
+        setLoading(false);
+      })
+      .catch((e) => {
+        setError(`Failed to load data: ${e.message}. Is the API server running?`);
+        setLoading(false);
+      });
   }, []);
 
   const cities = useMemo(
@@ -58,6 +65,20 @@ export default function SamplesPage() {
 
   // Reset page when filters change
   useEffect(() => setPage(0), [cityFilter, maneuverFilter, search]);
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-[var(--color-text-muted)] text-sm">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 text-sm rounded-md border border-[var(--color-border)] hover:bg-[var(--color-card)] transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

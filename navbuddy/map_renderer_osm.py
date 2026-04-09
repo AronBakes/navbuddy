@@ -39,8 +39,13 @@ CAR_ICONS = {
 # Car icon assets point east (90°) by default, so we subtract 90° to align with north
 CAR_ICON_HEADING_OFFSET = -90.0
 
-# Default scale factor for car icons (1.0 = original size)
-DEFAULT_CAR_ICON_SCALE = 0.025
+# Defaults from config/osm_map.yaml (falls back to hardcoded if missing)
+from navbuddy.config import CAR_ICON_SCALE as DEFAULT_CAR_ICON_SCALE
+from navbuddy.config import (
+    MAP_WIDTH, MAP_HEIGHT, MAP_ZOOM, MAP_TILE_URL, CAR_ICON,
+    POLYLINE_STEP_COLOR, POLYLINE_STEP_WEIGHT, POLYLINE_STEP_OPACITY,
+    POLYLINE_ROUTE_COLOR, POLYLINE_ROUTE_WEIGHT, POLYLINE_ROUTE_OPACITY,
+)
 
 
 from navbuddy.polylines import haversine_m, bearing_deg  # canonical implementations
@@ -154,13 +159,20 @@ def _generate_leaflet_html(
     end_lng: float,
     *,
     route_polyline_coords: Optional[List[Tuple[float, float]]] = None,
-    car_icon: str = "sedan",
+    car_icon: str = CAR_ICON,
     car_icon_data_uri: Optional[str] = None,
     car_icon_width: int = 48,
     car_icon_height: int = 48,
-    zoom: int = 18,
-    width: int = 1280,
-    height: int = 800,
+    zoom: int = MAP_ZOOM,
+    width: int = MAP_WIDTH,
+    height: int = MAP_HEIGHT,
+    tile_url: str = MAP_TILE_URL,
+    step_color: str = POLYLINE_STEP_COLOR,
+    step_weight: int = POLYLINE_STEP_WEIGHT,
+    step_opacity: float = POLYLINE_STEP_OPACITY,
+    route_color: str = POLYLINE_ROUTE_COLOR,
+    route_weight: int = POLYLINE_ROUTE_WEIGHT,
+    route_opacity: float = POLYLINE_ROUTE_OPACITY,
     nav_instruction: Optional[str] = None,
     next_instruction: Optional[str] = None,
     remaining_distance_m: Optional[float] = None,
@@ -352,7 +364,7 @@ def _generate_leaflet_html(
         }});
 
         // Add OSM tiles
-        L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+        L.tileLayer('{tile_url}', {{
             maxZoom: 19,
         }}).addTo(map);
 
@@ -360,9 +372,9 @@ def _generate_leaflet_html(
         const routePath = {route_path_js};
         if (routePath.length > 0) {{
             L.polyline(routePath, {{
-                color: '#8FAFD6',
-                weight: 5,
-                opacity: 0.58
+                color: '{route_color}',
+                weight: {route_weight},
+                opacity: {route_opacity}
             }}).addTo(map);
         }}
 
@@ -370,9 +382,9 @@ def _generate_leaflet_html(
         const stepPath = {step_path_js};
         if (stepPath.length > 0) {{
             L.polyline(stepPath, {{
-                color: '#4285F4',
-                weight: 7,
-                opacity: 0.95
+                color: '{step_color}',
+                weight: {step_weight},
+                opacity: {step_opacity}
             }}).addTo(map);
         }}
 
@@ -428,12 +440,12 @@ async def render_map_async(
     output_path: Path,
     *,
     route_polyline_coords: Optional[List[Tuple[float, float]]] = None,
-    car_icon: str = "sedan",
+    car_icon: str = CAR_ICON,
     assets_dir: Optional[Path] = None,
     car_icon_scale: float = DEFAULT_CAR_ICON_SCALE,
-    zoom: int = 18,
-    width: int = 1280,
-    height: int = 800,
+    zoom: int = MAP_ZOOM,
+    width: int = MAP_WIDTH,
+    height: int = MAP_HEIGHT,
     nav_instruction: Optional[str] = None,
     next_instruction: Optional[str] = None,
     remaining_distance_m: Optional[float] = None,
@@ -547,7 +559,13 @@ async def render_map_async(
         return True
 
     except Exception as e:
-        print(f"Map render failed: {e}")
+        err_str = str(e)
+        if "Executable doesn't exist" in err_str or "BrowserType" in err_str:
+            if not getattr(render_map_async, '_playwright_warned', False):
+                print("Map rendering requires Playwright chromium. Run: playwright install chromium")
+                render_map_async._playwright_warned = True
+        else:
+            print(f"Map render failed: {e}")
         return False
     finally:
         # Clean up temp file
@@ -566,7 +584,7 @@ def render_map(
     output_path: Path,
     *,
     route_polyline_coords: Optional[List[Tuple[float, float]]] = None,
-    car_icon: str = "sedan",
+    car_icon: str = CAR_ICON,
     assets_dir: Optional[Path] = None,
     car_icon_scale: float = DEFAULT_CAR_ICON_SCALE,
     **kwargs,
@@ -592,12 +610,12 @@ def generate_step_map_osm(
     car_lng: Optional[float] = None,
     car_heading: Optional[float] = None,
     route_polyline: Optional[str] = None,
-    car_icon: str = "sedan",
+    car_icon: str = CAR_ICON,
     assets_dir: Optional[Path] = None,
     car_icon_scale: float = DEFAULT_CAR_ICON_SCALE,
-    zoom: int = 18,
-    width: int = 1280,
-    height: int = 800,
+    zoom: int = MAP_ZOOM,
+    width: int = MAP_WIDTH,
+    height: int = MAP_HEIGHT,
 ) -> bool:
     """Generate OSM overhead map for a route step.
 

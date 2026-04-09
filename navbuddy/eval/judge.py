@@ -18,7 +18,6 @@ from pydantic import BaseModel, Field
 # Rate limiting
 MAX_RETRIES = 3
 RETRY_DELAY_BASE = 2.0  # Exponential backoff base
-REQUESTS_PER_MINUTE = 20  # Rate limit
 
 
 # Judge criteria for scoring
@@ -928,7 +927,7 @@ def human_labels_to_results(
                 continue
             # Last entry wins (most recent edit)
             # Support both custom_labels.jsonl format (enhanced_instruction)
-            # and ground_truth.jsonl format (instruction field)
+            # and canonical_gt.jsonl format (instruction field)
             instruction = entry.get("enhanced_instruction") or entry.get("instruction", "")
             results[sample_id] = {
                 "id": sample_id,

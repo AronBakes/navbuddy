@@ -16,11 +16,15 @@ from typing import Any, Dict, List, Optional
 # ── Action direction groups ──────────────────────────────────────
 
 DIRECTION_GROUPS: Dict[str, set] = {
-    "left": {"turn_left", "fork_left", "merge_left", "keep_left"},
-    "right": {"turn_right", "fork_right", "merge_right", "keep_right"},
-    "straight": {"straight"},
-    "uturn": {"uturn"},
-    "roundabout": {"roundabout"},
+    "left": {
+        "turn_left", "fork_left", "merge_left", "keep_left",
+        "slight_left", "sharp_left", "uturn_left", "roundabout_left", "ramp_left",
+    },
+    "right": {
+        "turn_right", "fork_right", "merge_right", "keep_right",
+        "slight_right", "sharp_right", "uturn_right", "roundabout_right", "ramp_right",
+    },
+    "straight": {"straight", "continue", "keep_straight"},
 }
 
 # Reverse lookup: action → group name
@@ -55,12 +59,12 @@ def score_action(
     gt: str,
     acceptable_actions: Optional[List[str]] = None,
 ) -> float:
-    """Score next_action with direction-group partial credit.
+    """Score next_action based on direction accuracy.
 
     Exact match with GT = 1.0.
     Match with any acceptable alternative = 1.0.
-    Same direction group as GT = 0.75.
-    Wrong = 0.0.
+    Same direction group (left/right/straight) = 1.0.
+    Wrong direction = 0.0.
     """
     pred = (pred or "").strip().lower()
     gt = (gt or "").strip().lower()
@@ -71,10 +75,11 @@ def score_action(
         acceptable = {a.strip().lower() for a in acceptable_actions}
         if pred in acceptable:
             return 1.0
+    # Direction accuracy: did the model get left/right/straight correct?
     pred_group = _ACTION_TO_GROUP.get(pred)
     gt_group = _ACTION_TO_GROUP.get(gt)
     if pred_group and gt_group and pred_group == gt_group:
-        return 0.75
+        return 1.0
     return 0.0
 
 
@@ -105,21 +110,20 @@ def score_lane_change(pred: Any, gt: Any) -> Optional[float]:
     return 1.0 if p == g else 0.0
 
 
-def score_lanes_count(pred: Optional[int], gt: Optional[int]) -> Optional[float]:
-    """Exact = 1.0, off-by-1 = 0.5, else 0.0.
+def score_lanes_count(pred: Optional[int], gt: Optional[int], max_error: int = 4) -> Optional[float]:
+    """Normalized lane count accuracy (0-1, higher is better).
 
-    Returns None when GT is None — exclude from metric average.
+    Linear decay from 1.0 (exact match) to 0.0 (off by max_error or more).
+    E.g. with max_error=4: exact=1.0, off-by-1=0.75, off-by-2=0.5, off-by-3=0.25, off-by-4+=0.0.
+
+    Returns None when GT or pred is None — exclude from metric average.
     """
     if gt is None:
         return None  # ambiguous GT — skip
     if pred is None:
-        return 0.0
-    diff = abs(int(pred) - int(gt))
-    if diff == 0:
-        return 1.0
-    if diff == 1:
-        return 0.5
-    return 0.0
+        return None  # model failed to produce a value — exclude
+    error = abs(int(pred) - int(gt))
+    return max(0.0, 1.0 - error / max_error)
 
 
 def score_set_overlap(pred: List[str], gt: List[str]) -> float:
@@ -403,18 +407,6 @@ def score_instruction(pred: str, gt: str) -> float:
     return _rouge_l_f1(pred, gt)
 
 
-# ── Composite scoring ────────────────────────────────────────────
-
-METRIC_WEIGHTS = {
-    "bertscore_f1": 0.35,
-    "semantic_similarity": 0.05,
-    "lane_change_required": 0.25,
-    "next_action": 0.20,
-    "relevant_landmarks": 0.10,
-    "potential_hazards": 0.05,
-}
-
-
 def score_result(
     pred: Dict[str, Any],
     gt: Dict[str, Any],
@@ -460,16 +452,11 @@ def score_result(
             gt.get("potential_hazards", []),
         ),
         "enhanced_instruction": instr_score,
-        # semantic_similarity used by composite — falls back to instruction score if not overridden
-        "semantic_similarity": instr_score,
     }
 
     if detailed:
         instr_metrics = score_instruction_metrics(pred_instr, gt_instr, use_semantic=use_semantic)
         scores.update(instr_metrics)
-
-        # Semantic similarity (same as enhanced_instruction but surfaced separately)
-        scores["semantic_similarity"] = scores.get("enhanced_instruction")
 
         # Landmark P/R/F1
         lm_prf = score_set_precision_recall_f1(
@@ -524,15 +511,6 @@ def score_result(
             except (TypeError, ValueError):
                 scores["lanes_count_exact"] = 0.0
 
-    # Weighted total — exclude metrics where GT was None (ambiguous)
-    active = {k: w for k, w in METRIC_WEIGHTS.items() if scores.get(k) is not None}
-    if active:
-        total_w = sum(active.values())
-        total = sum(scores[k] * w / total_w for k, w in active.items())
-    else:
-        total = 0.0
-    scores["total"] = round(total, 4)
-
     # Round individual scores
     for k in list(scores):
         if isinstance(scores[k], float):
@@ -555,7 +533,7 @@ def run_metric_eval(
 
     Args:
         results_dir: Directory containing result JSONL files.
-        ground_truth_path: Path to ground_truth.jsonl.
+        ground_truth_path: Path to canonical_gt.jsonl.
         samples_path: Optional path to samples.jsonl (unused for now).
         output_path: Optional path to write detailed JSONL output.
         verbose: Print summary table.
@@ -679,7 +657,7 @@ def _print_summary(eval_results: List[Dict[str, Any]]) -> None:
     # Sort by total descending
     sorted_models = sorted(
         model_scores.items(),
-        key=lambda kv: sum(s["total"] for s in kv[1]) / len(kv[1]),
+        key=lambda kv: sum(s.get("next_action", 0) for s in kv[1]) / len(kv[1]),
         reverse=True,
     )
 

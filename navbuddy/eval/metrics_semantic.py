@@ -95,14 +95,10 @@ def _expected_action(ref: Dict[str, Any]) -> str:
 
 
 def _same_direction_family(a: str, b: str) -> bool:
-    left = {"turn_left", "merge_left", "fork_left", "keep_left", "ramp_left"}
-    right = {"turn_right", "merge_right", "fork_right", "keep_right", "ramp_right"}
-    straight = {"continue", "straight", "merge"}
-    roundabout = {"roundabout", "roundabout_left", "roundabout_right"}
-    for family in (left, right, straight, roundabout):
-        if a in family and b in family:
-            return True
-    return False
+    from navbuddy.eval.metric_eval import DIRECTION_GROUPS, _ACTION_TO_GROUP
+    g_a = _ACTION_TO_GROUP.get(a)
+    g_b = _ACTION_TO_GROUP.get(b)
+    return bool(g_a and g_b and g_a == g_b)
 
 
 def _format_reward(pred: Dict[str, Any]) -> float:

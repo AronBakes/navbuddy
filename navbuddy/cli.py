@@ -33,6 +33,25 @@ def parse_latlon(value: str) -> tuple[float, float]:
     return float(parts[0]), float(parts[1])
 
 
+def _resolve_location(value: str, console) -> tuple[float, float]:
+    """Parse 'lat,lon' or geocode an address string."""
+    try:
+        return parse_latlon(value)
+    except (typer.BadParameter, ValueError):
+        from navbuddy.routing_client import geocode as _geocode
+        console.print(f"  Geocoding: [dim]{value}[/dim]")
+        (lat, lng), formatted, is_partial, alternatives = _geocode(value)
+        if is_partial:
+            console.print(f"  [yellow]Partial match:[/yellow] {formatted}")
+            if not typer.confirm("  Use this address?", default=False):
+                corrected = typer.prompt("  Enter corrected address")
+                (lat, lng), formatted, _, _ = _geocode(corrected)
+                console.print(f"  Resolved:  [bold]{formatted}[/bold]")
+        else:
+            console.print(f"  Resolved:  [bold]{formatted}[/bold]")
+        return (lat, lng)
+
+
 @app.callback()
 def callback():
     """NavBuddy - VLM training data for road navigation."""
@@ -73,7 +92,8 @@ def setup(
     import zipfile
     import urllib.request
 
-    MAPS_URL = "https://github.com/AronBakes/navbuddy/releases/download/v0.2.0/navbuddy100_maps.zip"
+    from navbuddy import __version__
+    MAPS_URL = f"https://github.com/AronBakes/navbuddy/releases/download/v{__version__}/navbuddy100_maps.zip"
 
     # ── Find manifest ──
     manifest_path = Path(__file__).parent.parent / "data" / "navbuddy100_manifest.json"
@@ -248,6 +268,43 @@ def setup(
         verbose=True,
     )
 
+    # ── Generate route metadata from manifest ──
+    from navbuddy.generate import generate_route_metadata_from_manifest
+    routes_count = generate_route_metadata_from_manifest(
+        manifest_path, output_dir,
+        progress_callback=lambda msg: console.print(f"  {msg}"),
+    )
+    console.print(f"  Routes: {routes_count} route metadata files generated")
+
+    # ── Augmented frames (optional) ──
+    console.print()
+    console.print("[bold]Generate augmented frames?[/bold]")
+    console.print("  Creates night, fog, rain, and motion blur variants of each frame.")
+    console.print("  Useful for evaluating VLM robustness under adverse conditions.")
+    console.print("  No API calls — pure local image processing (OpenCV).")
+    console.print()
+    generate_augments = typer.confirm("Generate augmented frames?", default=False)
+
+    if generate_augments:
+        try:
+            from navbuddy.augment import augment_dataset
+            frames_dir = output_dir / "frames"
+            if frames_dir.exists() and list(frames_dir.glob("*.jpg")):
+                augment_types = ["night", "fog", "rain", "motion_blur"]
+                console.print(f"  Generating {len(augment_types)} augmentations...")
+                aug_stats = augment_dataset(
+                    input_dir=frames_dir,
+                    output_base=output_dir,
+                    augmentations=augment_types,
+                    progress_callback=lambda msg: console.print(f"  {msg}"),
+                )
+                for aug_type, count in aug_stats.items():
+                    console.print(f"  {aug_type}: {count} frames")
+            else:
+                console.print("  [yellow]No frames found to augment.[/yellow]")
+        except ImportError:
+            console.print("  [yellow]Augmentation requires opencv: pip install navbuddy[render][/yellow]")
+
     # ── Summary ──
     console.print()
     console.print(f"[bold green]Setup complete![/bold green]")
@@ -255,6 +312,7 @@ def setup(
     if stats.get('failed', 0):
         console.print(f"  [yellow]Failed: {stats['failed']} (check API key / quota)[/yellow]")
     console.print(f"  Samples: {stats.get('samples_written', 0)}")
+    console.print(f"  Routes: {routes_count} route metadata files")
     console.print(f"  Output: {output_dir}")
     console.print()
     console.print("[dim]Next steps:[/dim]")
@@ -452,10 +510,10 @@ def generate(
         "osm", "--map-renderer", help="Map renderer: 'osm' (default, Playwright + Leaflet) or 'google' (Static Maps API)"
     ),
     car_icon: str = typer.Option(
-        "sedan", "--car-icon", help="Car icon: 'sedan' (default), 'arrow', 'cybertruck', 'f1', 'model3', 'wrx'"
+        None, "--car-icon", help="Car icon: 'sedan', 'arrow', 'cybertruck', 'f1', 'model3', 'wrx' (default from config/osm_map.yaml)"
     ),
     car_icon_scale: float = typer.Option(
-        0.025, "--car-icon-scale", help="Scale factor for car icons (default 0.025, maintains aspect ratio)"
+        None, "--car-icon-scale", help="Scale factor for car icons (default from config/osm_map.yaml)"
     ),
     assets_dir: Optional[Path] = typer.Option(
         None, "--assets-dir", help="Directory containing car icon images"
@@ -478,29 +536,18 @@ def generate(
     """
     from navbuddy.generate import generate_route, preflight_route
     from navbuddy.sampling import FRAME_PROFILES, profile_from_sample_mode
+    from navbuddy.config import CAR_ICON as _CFG_CAR_ICON, CAR_ICON_SCALE as _CFG_CAR_ICON_SCALE
+
+    # Resolve None defaults from config
+    if car_icon is None:
+        car_icon = _CFG_CAR_ICON
+    if car_icon_scale is None:
+        car_icon_scale = _CFG_CAR_ICON_SCALE
 
     # Accept either "lat,lon" or an address string
-    def resolve_location(value: str) -> tuple[float, float]:
-        try:
-            return parse_latlon(value)
-        except (typer.BadParameter, ValueError):
-            # Not coords — try geocoding as address
-            from navbuddy.routing_client import geocode as _geocode
-            console.print(f"  Geocoding: [dim]{value}[/dim]")
-            (lat, lng), formatted, is_partial, alternatives = _geocode(value)
-            if is_partial:
-                console.print(f"  [yellow]Partial match:[/yellow] {formatted}")
-                if not typer.confirm("  Use this address?", default=False):
-                    corrected = typer.prompt("  Enter corrected address")
-                    (lat, lng), formatted, _, _ = _geocode(corrected)
-                    console.print(f"  Resolved:  [bold]{formatted}[/bold]")
-            else:
-                console.print(f"  Resolved:  [bold]{formatted}[/bold]")
-            return (lat, lng)
-
     try:
-        origin_coords = resolve_location(origin)
-        dest_coords = resolve_location(dest)
+        origin_coords = _resolve_location(origin, console)
+        dest_coords = _resolve_location(dest, console)
     except Exception as e:
         console.print(f"[red]Error resolving location: {e}[/red]")
         raise typer.Exit(1)
@@ -614,6 +661,15 @@ def generate(
         console.print("[yellow]Cancelled.[/yellow]")
         raise typer.Exit(0)
 
+    # ── Check playwright for map rendering ──
+    from navbuddy.map_renderer_osm import HAS_PLAYWRIGHT
+    if not HAS_PLAYWRIGHT:
+        console.print()
+        console.print("[yellow]Playwright is not installed — overhead maps will be skipped.[/yellow]")
+        console.print("[dim]  To enable maps: pip install navbuddy[render] && playwright install chromium[/dim]")
+        if not typer.confirm("Continue without maps?", default=True):
+            raise typer.Exit(0)
+
     # ── Execute: download frames and generate maps ──
     with Progress(
         SpinnerColumn(),
@@ -622,8 +678,8 @@ def generate(
     ) as progress:
         task = progress.add_task("Generating route...", total=None)
 
-        # If city is provided, write into output_dir/city/ subdirectory
-        effective_output_dir = output_dir / city if city else output_dir
+        # Always write to output_dir (flat structure). City only affects route ID prefix.
+        effective_output_dir = output_dir
 
         try:
             result = generate_route(
@@ -665,6 +721,73 @@ def generate(
     console.print(f"  navbuddy browse -d {out}")
     console.print(f"  navbuddy play {result['route_id']} -d {out}")
     console.print(f"  navbuddy evaluate -d {out}/samples.jsonl -m google/gemini-2.0-flash-001 -n 5")
+
+
+@app.command(rich_help_panel="Data")
+def route(
+    origin: str = typer.Option(..., "--origin", "-o", help="Origin as 'lat,lon' or address"),
+    dest: str = typer.Option(..., "--dest", "-d", help="Destination as 'lat,lon' or address"),
+    output_dir: Path = typer.Option(
+        Path("./data"), "--output-dir", "-O", help="Output directory"
+    ),
+    city: Optional[str] = typer.Option(
+        None, "--city", "-c", help="City name for route ID prefix"
+    ),
+    route_id: Optional[str] = typer.Option(
+        None, "--route-id", help="Custom route ID (auto-generated if not provided)"
+    ),
+):
+    """Fetch a route from Google Directions API and save route metadata.
+
+    Downloads only the route data (no Street View frames or maps).
+    Saves route.json, metadata.json, guidance.json, and polyline.json
+    to data/routes/{route_id}/.
+
+    Cost: ~$0.005 per route (1 Directions API call).
+
+    Examples:
+        navbuddy route -o "Sydney Opera House" -d "Bondi Beach"
+        navbuddy route -o "-27.4698,153.0251" -d "-27.4512,153.0389" -c brisbane
+    """
+    from navbuddy.generate import fetch_and_save_route
+
+    try:
+        origin_coords = _resolve_location(origin, console)
+        dest_coords = _resolve_location(dest, console)
+    except Exception as e:
+        console.print(f"[red]Error resolving location: {e}[/red]")
+        raise typer.Exit(1)
+
+    console.print("\n[bold]Fetching route from Google Directions...[/bold]")
+
+    try:
+        result = fetch_and_save_route(
+            origin_coords, dest_coords,
+            output_dir=output_dir,
+            city=city,
+            route_id=route_id,
+            progress_callback=lambda msg: console.print(f"  [dim]{msg}[/dim]"),
+        )
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+    routes_dir = result["routes_dir"]
+    console.print(f"\n[green]Route saved![/green]")
+    console.print(f"  Route ID:  {result['route_id']}")
+    console.print(f"  Steps:     {len(result['steps'])}")
+    console.print(f"  Distance:  {result['total_distance_m'] / 1000:.1f} km")
+    console.print(f"  Duration:  {result['total_duration_s'] / 60:.0f} min")
+    console.print(f"  Output:    {routes_dir}")
+    console.print()
+    console.print("[dim]Files saved:[/dim]")
+    console.print(f"  {routes_dir}/route.json")
+    console.print(f"  {routes_dir}/metadata.json")
+    console.print(f"  {routes_dir}/guidance.json")
+    console.print(f"  {routes_dir}/polyline.json")
+    console.print()
+    console.print("[dim]Next steps:[/dim]")
+    console.print(f"  navbuddy generate -o \"{origin}\" -d \"{dest}\" -c {city or 'mycity'}  # add frames + maps")
 
 
 @app.command(rich_help_panel="Data")
@@ -717,9 +840,9 @@ def download_manifest(
         help="Render OSM overhead maps (requires: playwright install chromium)",
     ),
     car_icon: str = typer.Option(
-        "arrow",
+        None,
         "--car-icon",
-        help="Car marker on overhead maps: arrow, sedan, cybertruck, f1, model3, wrx",
+        help="Car marker on overhead maps: arrow, sedan, cybertruck, f1, model3, wrx (default from config/osm_map.yaml)",
     ),
 ):
     """Download images from a manifest file.
@@ -745,6 +868,10 @@ def download_manifest(
     """
     import os
     from navbuddy.manifest import DOWNLOAD_FRAME_PROFILES, download_from_manifest, estimate_download_from_manifest
+    from navbuddy.config import CAR_ICON as _CFG_CAR_ICON
+
+    if car_icon is None:
+        car_icon = _CFG_CAR_ICON
 
     # Try to get API key from param or environment
     key = api_key or os.environ.get("GOOGLE_STREETVIEW_API_KEY") or os.environ.get("GOOGLE_MAPS_API_KEY")
@@ -844,7 +971,7 @@ def download_manifest(
         raise typer.Exit(1)
 
 
-@app.command("regenerate-frames", rich_help_panel="Data")
+@app.command("regenerate-frames", rich_help_panel="Data", hidden=True)
 def regenerate_frames(
     data_root: Path = typer.Option(..., "--data-root", "-d", help="Dataset root (contains samples.jsonl)"),
     frame_profile: str = typer.Option(
@@ -1315,7 +1442,7 @@ def evaluate_matrix(
         )
 
 
-@app.command("eval-assign-augments", rich_help_panel="Evaluation")
+@app.command("eval-assign-augments", rich_help_panel="Evaluation", hidden=True)
 def eval_assign_augments(
     dataset: Path = typer.Option(..., "--dataset", "-d", help="Path to samples.jsonl"),
     output: Path = typer.Option(
@@ -1344,7 +1471,7 @@ def eval_assign_augments(
     console.print(f"  Output: {output}")
 
 
-@app.command("eval-coverage", rich_help_panel="Evaluation")
+@app.command("eval-coverage", rich_help_panel="Evaluation", hidden=True)
 def eval_coverage(
     dataset: Path = typer.Option(..., "--dataset", "-d", help="Path to samples.jsonl"),
     results_dir: Path = typer.Option(
@@ -1619,13 +1746,13 @@ def augment(
 
     Examples:
         # All augmentations
-        navbuddy augment --input ./data/brisbane/frames --output ./data/brisbane
+        navbuddy augment --input ./data/frames --output ./data
 
         # Specific augmentations
-        navbuddy augment --input ./data/brisbane/frames --output ./data/brisbane -a night,rain
+        navbuddy augment --input ./data/frames --output ./data -a night,rain
 
         # Test on first 10 frames
-        navbuddy augment --input ./data/brisbane/frames --output ./data/brisbane --limit 10
+        navbuddy augment --input ./data/frames --output ./data --limit 10
     """
     from navbuddy.augment import augment_dataset, AugmentationType
     import cv2
@@ -1735,7 +1862,7 @@ def rank(
     ),
     data_root: Optional[Path] = typer.Option(
         None, "--data-root", "-d",
-        help="Path to data directory (e.g., data/brisbane). When provided, the judge sees the same images the VLMs saw."
+        help="Path to data directory (e.g., ./data). When provided, the judge sees the same images the VLMs saw."
     ),
     route: Optional[str] = typer.Option(
         None, "--route",
@@ -1764,8 +1891,8 @@ def rank(
 
     Examples:
         # Auto-discover results for a route and judge pairwise
-        navbuddy rank -r results/ -s data/brisbane/samples.jsonl \\
-            --route brisbane_routex3kg7736w -d data/brisbane -o rankings_route.jsonl
+        navbuddy rank -r data/results/ -s data/samples.jsonl \\
+            --route brisbane_routex3kg7736w -d data -o rankings_route.jsonl
 
         # Explicit files, pointwise
         navbuddy rank -i results_gpt4o.jsonl,results_gemini.jsonl \\
@@ -1985,7 +2112,7 @@ def benchmark(
     ),
     gt_file: Optional[Path] = typer.Option(
         None, "--gt-file",
-        help="Path to ground_truth.jsonl (default: results/ground_truth.jsonl next to output)"
+        help="Path to canonical_gt.jsonl (default: data/canonical_gt.jsonl)"
     ),
     gt_weight: float = typer.Option(
         1.0, "--gt-weight",
@@ -2175,7 +2302,7 @@ def benchmark(
         # Load ground truth for gt_only filter and/or gt_weight sampling
         gt_data = None
         if gt_only or gt_weight > 1.0:
-            gt_path = gt_file or (output.parent / "ground_truth.jsonl")
+            gt_path = gt_file or Path("data/canonical_gt.jsonl")
             if gt_path.exists():
                 gt_data = {}
                 with open(gt_path, encoding="utf-8") as _f:
@@ -2228,7 +2355,7 @@ def play(
     route_id: str = typer.Argument(..., help="Route ID to play"),
     data_root: Path = typer.Option(
         Path("./data"), "--data-root", "-d",
-        help="Data root directory"
+        help="Data directory"
     ),
     static: bool = typer.Option(
         False, "--static",
@@ -2247,7 +2374,7 @@ def play(
         navbuddy play 4000_4006_X3KG7736W --static
 
         # Custom data directory
-        navbuddy play 2000_2000_J4MNCG01R -d ./data/brisbane
+        navbuddy play 2000_2000_J4MNCG01R -d ./data
     """
     from navbuddy.player import play_route, list_routes
 
@@ -2255,17 +2382,9 @@ def play(
         console.print(f"[red]Error: Data root not found: {data_root}[/red]")
         raise typer.Exit(1)
 
-    # Check if route exists — search data_root and city subdirectories
+    # Check if route exists
     routes_dir = data_root / "routes" / route_id
     effective_data_root = data_root
-    if not routes_dir.exists():
-        # Search city subdirectories (e.g. data/brisbane/routes/...)
-        for sub in sorted(data_root.iterdir()):
-            candidate = sub / "routes" / route_id
-            if candidate.is_dir():
-                effective_data_root = sub
-                routes_dir = candidate
-                break
 
     if not routes_dir.exists():
         console.print(f"[red]Error: Route not found: {route_id}[/red]")
@@ -2289,14 +2408,14 @@ def play(
 def list_routes_cmd(
     data_root: Path = typer.Option(
         Path("./data"), "--data-root", "-d",
-        help="Data root directory"
+        help="Data directory"
     ),
 ):
     """List available routes.
 
     Examples:
         navbuddy list-routes
-        navbuddy list-routes -d ./data/brisbane
+        navbuddy list-routes -d ./data
     """
     from navbuddy.player import list_routes
 
@@ -2305,10 +2424,6 @@ def list_routes_cmd(
         raise typer.Exit(1)
 
     routes = list_routes(data_root)
-    # Also search city subdirectories
-    for sub in sorted(data_root.iterdir()):
-        if sub.is_dir() and (sub / "routes").is_dir():
-            routes.extend(list_routes(sub))
 
     if not routes:
         console.print("[yellow]No routes found.[/yellow]")
@@ -2321,15 +2436,15 @@ def list_routes_cmd(
 
 @app.command("purge-routes", rich_help_panel="Data")
 def purge_routes(
-    data_dir: Path = typer.Option(..., "--data-dir", "-d", help="City data directory (e.g. ./data/brisbane)"),
+    data_dir: Path = typer.Option(..., "--data-dir", "-d", help="City data directory (e.g. ./data)"),
     source: Optional[str] = typer.Option(None, "--source", help="Filter by metadata.source (e.g. 'google')"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview changes without applying"),
 ):
     """Delete routes matching a filter from samples.jsonl, frames, maps, routes/, and results.
 
     Examples:
-        navbuddy purge-routes -d ./data/brisbane --source google --dry-run
-        navbuddy purge-routes -d ./data/brisbane --source google
+        navbuddy purge-routes -d ./data --source google --dry-run
+        navbuddy purge-routes -d ./data --source google
     """
     import re
     import shutil
@@ -2451,8 +2566,8 @@ def purge_routes(
             else:
                 console.print(f"  [dim]{results_file.name}: would remove {removed} entries[/dim]")
 
-    # 6. Strip from ground_truth.jsonl
-    gt_path = RESULTS_DIR / "ground_truth.jsonl"
+    # 6. Strip from canonical_gt.jsonl
+    gt_path = RESULTS_DIR / "canonical_gt.jsonl"
     if gt_path.exists():
         lines = gt_path.read_text().splitlines()
         new_lines = []
@@ -2469,9 +2584,9 @@ def purge_routes(
             if not dry_run:
                 shutil.copy2(gt_path, gt_path.with_suffix(".jsonl.bak_purge"))
                 gt_path.write_text("\n".join(new_lines) + "\n")
-                console.print(f"[green]ground_truth.jsonl:[/green] removed {gt_removed} entries")
+                console.print(f"[green]canonical_gt.jsonl:[/green] removed {gt_removed} entries")
             else:
-                console.print(f"  [dim]ground_truth.jsonl: would remove {gt_removed} entries[/dim]")
+                console.print(f"  [dim]canonical_gt.jsonl: would remove {gt_removed} entries[/dim]")
 
     if dry_run:
         console.print("\n[yellow]=== Dry run complete. Run without --dry-run to apply. ===[/yellow]")
@@ -2479,11 +2594,11 @@ def purge_routes(
         console.print("\n[bold green]Purge complete.[/bold green] Restart the dashboard backend to reload data.")
 
 
-@app.command("export-manifest", rich_help_panel="Data")
+@app.command("export-manifest", rich_help_panel="Data", hidden=True)
 def export_manifest_cmd(
     data_root: Path = typer.Option(
         Path("./data"), "--data-root", "-d",
-        help="Data root directory"
+        help="Data directory"
     ),
     output: Path = typer.Option(
         Path("manifest.json"), "--output", "-o",
@@ -2510,7 +2625,7 @@ def export_manifest_cmd(
 
     Examples:
         navbuddy export-manifest -o manifest.json
-        navbuddy export-manifest -d ./data/brisbane -o navbuddy_v3.json
+        navbuddy export-manifest -d ./data -o navbuddy_v3.json
     """
     from navbuddy.manifest import export_manifest
 
@@ -2550,14 +2665,14 @@ def export_manifest_cmd(
         raise typer.Exit(1)
 
 
-@app.command("prepare-training", rich_help_panel="Training (coming soon)")
+@app.command("prepare-training", rich_help_panel="Training (coming soon)", hidden=True)
 def prepare_training():
     """Prepare SFT/DPO training data from judge rankings."""
     console.print("[yellow]Training commands are coming soon.[/yellow]")
     raise typer.Exit(0)
 
 
-@app.command(rich_help_panel="Training (coming soon)")
+@app.command(rich_help_panel="Training (coming soon)", hidden=True)
 def train():
     """Fine-tune a VLM with SFT, DPO, or GRPO."""
     console.print("[yellow]Training commands are coming soon.[/yellow]")
@@ -2568,14 +2683,14 @@ def train():
 def stats(
     data_root: Path = typer.Option(
         Path("./data"), "--data-root", "-d",
-        help="Data root directory"
+        help="Data directory"
     ),
 ):
     """Show dataset statistics.
 
     Examples:
         navbuddy stats
-        navbuddy stats -d ./data/brisbane
+        navbuddy stats -d ./data
     """
     import json
     from rich.table import Table
@@ -2630,29 +2745,6 @@ def stats(
                     samples.append(s)
                     m = s.get("maneuver", "UNKNOWN")
                     maneuvers[m] = maneuvers.get(m, 0) + 1
-
-    # Also search city subdirectories
-    for sub in sorted(data_root.iterdir()):
-        if sub.is_dir():
-            sub_routes_dir = sub / "routes"
-            if sub_routes_dir.exists():
-                routes.extend([d for d in sub_routes_dir.iterdir() if d.is_dir() and (d / "metadata.json").exists()])
-            sub_frames = sub / "frames"
-            if sub_frames.exists():
-                frames_count += len(list(sub_frames.glob("*.jpg"))) + len(list(sub_frames.glob("*.png")))
-            sub_maps = sub / "maps"
-            if sub_maps.exists():
-                osm_count += len(list(sub_maps.glob("*.png")))
-            sub_samples = sub / "samples.jsonl"
-            if sub_samples.exists():
-                with open(sub_samples, encoding="utf-8") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line:
-                            s = json.loads(line)
-                            samples.append(s)
-                            m = s.get("maneuver", "UNKNOWN")
-                            maneuvers[m] = maneuvers.get(m, 0) + 1
 
     # Overall summary
     console.print("[bold cyan]Overview[/bold cyan]")
@@ -2733,7 +2825,7 @@ def stats(
         console.print()
 
 
-@app.command("assign-splits", rich_help_panel="Training (coming soon)")
+@app.command("assign-splits", rich_help_panel="Training (coming soon)", hidden=True)
 def assign_splits():
     """Assign train/val/test splits to samples."""
     console.print("[yellow]Training commands are coming soon.[/yellow]")
@@ -2749,7 +2841,7 @@ def metric_eval(
         Path("results"), "--results-dir", "-r", help="Directory with result JSONL files"
     ),
     ground_truth: Path = typer.Option(
-        Path("results/ground_truth.jsonl"), "--gt", help="Path to ground_truth.jsonl"
+        Path("data/canonical_gt.jsonl"), "--gt", help="Path to canonical_gt.jsonl"
     ),
     output: Optional[Path] = typer.Option(
         None, "-o", "--output", help="Output JSONL path for detailed scores"

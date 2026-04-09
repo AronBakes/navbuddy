@@ -6,8 +6,13 @@ on night, fog, rain, and motion blur conditions.
 
 from pathlib import Path
 from typing import Callable, Dict, List, Literal, Optional, Tuple
-import cv2
-import numpy as np
+
+try:
+    import cv2
+    import numpy as np
+except ImportError:
+    cv2 = None  # type: ignore
+    np = None  # type: ignore
 
 AugmentationType = Literal["night", "motion_blur", "fog", "rain"]
 
@@ -20,11 +25,53 @@ __all__ = [
     "augment_dataset",
 ]
 
+# ── Night effect constants ───────────────────────────────────────
+NIGHT_DARKNESS = 0.7              # Default intensity (0.5-0.9, higher = darker)
+NIGHT_BLUE_TINT = 0.15            # Blue shift in shadows (0-0.3)
+NIGHT_BLUE_CHANNEL_GAIN = 50      # Blue channel boost in shadow areas
+NIGHT_GREEN_CHANNEL_LOSS = 20     # Green channel reduction in shadows
+NIGHT_RED_CHANNEL_LOSS = 30       # Red channel reduction in shadows
+NIGHT_GLOW_THRESHOLD = 0.7        # Brightness threshold for glow detection
+NIGHT_GLOW_KERNEL = (15, 15)      # Gaussian blur kernel for bright spot detection
+NIGHT_GLOW_LARGE_KERNEL = (31, 31)  # Larger blur kernel for glow spread
+NIGHT_GLOW_INTENSITY = 0.3        # Glow blending strength
+NIGHT_CONTRAST_BOOST = 1.1        # Contrast multiplier
+
+# ── Motion blur constants ────────────────────────────────────────
+MOTION_BLUR_KERNEL_SIZE = 15      # Default kernel size (odd, 5-25)
+MOTION_BLUR_EDGE_BLEND = 0.7     # Edge blur blending factor
+
+# ── Fog effect constants ─────────────────────────────────────────
+FOG_DENSITY = 0.5                 # Default fog density (0.2-0.8)
+FOG_COLOR_BGR = (220, 220, 230)   # Fog color in BGR
+FOG_DEPTH_MULTIPLIER = 3          # Exponential depth scaling
+FOG_NOISE_STD = 0.05              # Noise standard deviation for realism
+FOG_BLUR_KERNEL = (21, 21)        # Gaussian blur for fog smoothing
+FOG_SATURATION_LOSS = 0.7         # Saturation reduction in foggy areas
+
+# ── Rain effect constants ────────────────────────────────────────
+RAIN_INTENSITY = 0.5              # Default rain intensity (0.3-0.8)
+RAIN_STREAK_ANGLE = 15            # Default streak angle in degrees
+RAIN_STREAK_LENGTH = 20           # Default streak length in pixels
+RAIN_CONTRAST_LOSS = 0.3          # Contrast reduction factor
+RAIN_BLUE_TINT = 15               # Blue channel boost (wet atmosphere)
+RAIN_STREAKS_PER_INTENSITY = 500  # Streaks = intensity * this value
+RAIN_STREAK_BRIGHTNESS = (0.3, 0.7)  # Random brightness range per streak
+RAIN_STREAK_ANGLE_JITTER = 10    # Random angle variation per streak
+RAIN_STREAK_BLUR_KERNEL = (3, 3)  # Gaussian blur for streak softening
+RAIN_STREAK_COLOR_BGR = (200, 200, 210)  # Streak color (slight blue-white)
+RAIN_STREAK_BLEND = 0.5           # Streak blending strength
+RAIN_DROPLETS_PER_INTENSITY = 50  # Droplets = intensity * this value
+RAIN_DROPLET_RADIUS = (3, 12)     # Random radius range
+RAIN_DROPLET_BLUR_KERNEL = (5, 5)  # Gaussian blur for droplet refraction
+RAIN_DROPLET_BLEND = 0.4          # Droplet blending strength
+RAIN_DROPLET_HIGHLIGHT = 30       # Highlight intensity on droplets
+
 
 def augment_night(
     img: np.ndarray,
-    intensity: float = 0.7,
-    blue_tint: float = 0.15,
+    intensity: float = NIGHT_DARKNESS,
+    blue_tint: float = NIGHT_BLUE_TINT,
 ) -> np.ndarray:
     """Apply night-time effect.
 
@@ -47,27 +94,27 @@ def augment_night(
     shadow_mask = 1.0 - gray  # Darker areas get more tint
 
     # Increase blue channel in shadows
-    result[:, :, 0] += shadow_mask * blue_tint * 50  # B channel
-    result[:, :, 1] -= shadow_mask * blue_tint * 20  # G channel
-    result[:, :, 2] -= shadow_mask * blue_tint * 30  # R channel
+    result[:, :, 0] += shadow_mask * blue_tint * NIGHT_BLUE_CHANNEL_GAIN
+    result[:, :, 1] -= shadow_mask * blue_tint * NIGHT_GREEN_CHANNEL_LOSS
+    result[:, :, 2] -= shadow_mask * blue_tint * NIGHT_RED_CHANNEL_LOSS
 
     # Boost bright spots (street lights, signs)
-    bright_mask = (gray > 0.7).astype(np.float32)
-    bright_mask = cv2.GaussianBlur(bright_mask, (15, 15), 0)
+    bright_mask = (gray > NIGHT_GLOW_THRESHOLD).astype(np.float32)
+    bright_mask = cv2.GaussianBlur(bright_mask, NIGHT_GLOW_KERNEL, 0)
 
     # Add glow around bright areas
-    glow = cv2.GaussianBlur(img.astype(np.float32), (31, 31), 0)
-    result = result + glow * bright_mask[:, :, np.newaxis] * 0.3
+    glow = cv2.GaussianBlur(img.astype(np.float32), NIGHT_GLOW_LARGE_KERNEL, 0)
+    result = result + glow * bright_mask[:, :, np.newaxis] * NIGHT_GLOW_INTENSITY
 
     # Increase contrast slightly
-    result = (result - 128) * 1.1 + 128
+    result = (result - 128) * NIGHT_CONTRAST_BOOST + 128
 
     return np.clip(result, 0, 255).astype(np.uint8)
 
 
 def augment_motion_blur(
     img: np.ndarray,
-    kernel_size: int = 15,
+    kernel_size: int = MOTION_BLUR_KERNEL_SIZE,
     angle: float = 0,
 ) -> np.ndarray:
     """Apply directional motion blur.
@@ -109,15 +156,15 @@ def augment_motion_blur(
     mask = mask[:, :, np.newaxis]
 
     # Blend original (center) with blurred (edges)
-    result = (img * (1 - mask * 0.7) + result * mask * 0.7).astype(np.uint8)
+    result = (img * (1 - mask * MOTION_BLUR_EDGE_BLEND) + result * mask * MOTION_BLUR_EDGE_BLEND).astype(np.uint8)
 
     return result
 
 
 def augment_fog(
     img: np.ndarray,
-    density: float = 0.5,
-    fog_color: Tuple[int, int, int] = (220, 220, 230),
+    density: float = FOG_DENSITY,
+    fog_color: Tuple[int, int, int] = FOG_COLOR_BGR,
 ) -> np.ndarray:
     """Apply fog/haze effect.
 
@@ -137,12 +184,12 @@ def augment_fog(
     depth_mask = np.broadcast_to(y_coords, (h, w))
 
     # Apply exponential fog model
-    fog_intensity = 1 - np.exp(-density * depth_mask * 3)
+    fog_intensity = 1 - np.exp(-density * depth_mask * FOG_DEPTH_MULTIPLIER)
 
     # Add some noise for realism
-    noise = np.random.normal(0, 0.05, (h, w))
+    noise = np.random.normal(0, FOG_NOISE_STD, (h, w))
     fog_intensity = np.clip(fog_intensity + noise, 0, 1)
-    fog_intensity = cv2.GaussianBlur(fog_intensity.astype(np.float32), (21, 21), 0)
+    fog_intensity = cv2.GaussianBlur(fog_intensity.astype(np.float32), FOG_BLUR_KERNEL, 0)
 
     # Create fog layer
     fog_layer = np.full_like(img, fog_color, dtype=np.float32)
@@ -153,7 +200,7 @@ def augment_fog(
 
     # Reduce saturation in foggy areas
     hsv = cv2.cvtColor(result.astype(np.uint8), cv2.COLOR_BGR2HSV).astype(np.float32)
-    hsv[:, :, 1] = hsv[:, :, 1] * (1 - fog_intensity * 0.7)
+    hsv[:, :, 1] = hsv[:, :, 1] * (1 - fog_intensity * FOG_SATURATION_LOSS)
     result = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
 
     return result
@@ -161,9 +208,9 @@ def augment_fog(
 
 def augment_rain(
     img: np.ndarray,
-    intensity: float = 0.5,
-    angle: float = 15,
-    streak_length: int = 20,
+    intensity: float = RAIN_INTENSITY,
+    angle: float = RAIN_STREAK_ANGLE,
+    streak_length: int = RAIN_STREAK_LENGTH,
 ) -> np.ndarray:
     """Apply rain effect with streaks and reduced visibility.
 
@@ -180,14 +227,14 @@ def augment_rain(
     result = img.copy().astype(np.float32)
 
     # Reduce overall contrast and add slight blue tint (wet atmosphere)
-    result = result * (1 - intensity * 0.3)
-    result[:, :, 0] += intensity * 15  # Blue tint
+    result = result * (1 - intensity * RAIN_CONTRAST_LOSS)
+    result[:, :, 0] += intensity * RAIN_BLUE_TINT
 
     # Create rain streak layer
     rain_layer = np.zeros((h, w), dtype=np.float32)
 
     # Number of rain streaks based on intensity
-    num_streaks = int(intensity * 500)
+    num_streaks = int(intensity * RAIN_STREAKS_PER_INTENSITY)
 
     for _ in range(num_streaks):
         # Random start position
@@ -196,28 +243,28 @@ def augment_rain(
 
         # Calculate streak end point
         length = np.random.randint(streak_length // 2, streak_length)
-        angle_rad = np.radians(angle + np.random.uniform(-10, 10))
+        angle_rad = np.radians(angle + np.random.uniform(-RAIN_STREAK_ANGLE_JITTER, RAIN_STREAK_ANGLE_JITTER))
         x2 = int(x + length * np.sin(angle_rad))
         y2 = int(y + length * np.cos(angle_rad))
 
         # Draw streak
-        brightness = np.random.uniform(0.3, 0.7)
+        brightness = np.random.uniform(*RAIN_STREAK_BRIGHTNESS)
         cv2.line(rain_layer, (x, y), (x2, y2), brightness, 1)
 
     # Blur rain streaks slightly
-    rain_layer = cv2.GaussianBlur(rain_layer, (3, 3), 0)
+    rain_layer = cv2.GaussianBlur(rain_layer, RAIN_STREAK_BLUR_KERNEL, 0)
 
     # Add rain to image
-    rain_color = np.array([200, 200, 210])  # Slight blue-white
+    rain_color = np.array(RAIN_STREAK_COLOR_BGR)
     rain_mask = rain_layer[:, :, np.newaxis]
-    result = result + rain_mask * rain_color * 0.5
+    result = result + rain_mask * rain_color * RAIN_STREAK_BLEND
 
     # Add water droplets on windshield
-    num_droplets = int(intensity * 50)
+    num_droplets = int(intensity * RAIN_DROPLETS_PER_INTENSITY)
     for _ in range(num_droplets):
         cx = np.random.randint(0, w)
         cy = np.random.randint(0, h)
-        radius = np.random.randint(3, 12)
+        radius = np.random.randint(*RAIN_DROPLET_RADIUS)
 
         # Create droplet with refraction effect
         y_min = max(0, cy - radius)
@@ -228,21 +275,21 @@ def augment_rain(
         if y_max > y_min and x_max > x_min:
             # Slight distortion in droplet area
             droplet_region = result[y_min:y_max, x_min:x_max].copy()
-            droplet_region = cv2.GaussianBlur(droplet_region, (5, 5), 0)
+            droplet_region = cv2.GaussianBlur(droplet_region, RAIN_DROPLET_BLUR_KERNEL, 0)
 
             # Create circular mask
             mask = np.zeros((y_max - y_min, x_max - x_min), dtype=np.float32)
             local_cx = cx - x_min
             local_cy = cy - y_min
             cv2.circle(mask, (local_cx, local_cy), radius, 1.0, -1)
-            mask = cv2.GaussianBlur(mask, (5, 5), 0)
+            mask = cv2.GaussianBlur(mask, RAIN_DROPLET_BLUR_KERNEL, 0)
 
             # Apply droplet
             mask = mask[:, :, np.newaxis]
             result[y_min:y_max, x_min:x_max] = (
-                result[y_min:y_max, x_min:x_max] * (1 - mask * 0.4) +
-                droplet_region * mask * 0.4 +
-                mask * 30  # Highlight
+                result[y_min:y_max, x_min:x_max] * (1 - mask * RAIN_DROPLET_BLEND) +
+                droplet_region * mask * RAIN_DROPLET_BLEND +
+                mask * RAIN_DROPLET_HIGHLIGHT
             )
 
     return np.clip(result, 0, 255).astype(np.uint8)

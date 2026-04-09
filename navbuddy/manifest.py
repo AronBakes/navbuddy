@@ -263,7 +263,7 @@ def build_manifest(
     """Build a manifest from a data directory.
 
     Args:
-        data_root: Root data directory (e.g., ./data/brisbane)
+        data_root: Root data directory (e.g., ./data)
         name: Dataset name
         description: Dataset description
         manifest_frame_profile: sparse4 or all
@@ -480,7 +480,7 @@ def download_from_manifest(
     sample_start: Optional[float] = None,
     sample_end: Optional[float] = None,
     render_maps: bool = False,
-    car_icon: str = "arrow",
+    car_icon: Optional[str] = None,
     verbose: bool = True,
 ) -> Dict[str, int]:
     """Download images from a manifest using Google Street View API.
@@ -496,6 +496,10 @@ def download_from_manifest(
         Dict with download stats
     """
     import urllib.request
+    from navbuddy.config import CAR_ICON, MAP_WIDTH, MAP_HEIGHT, OVERLAY_SCALE
+
+    if car_icon is None:
+        car_icon = CAR_ICON
 
     profile = (frame_profile or "manifest").strip().lower()
     if profile not in DOWNLOAD_FRAME_PROFILES:
@@ -565,7 +569,6 @@ def download_from_manifest(
                 add_overlay_to_map as _add_overlay_fn,
                 estimate_eta_from_sample,
                 build_step_payload_from_sample,
-                overlay_scale_for_map,
             )
         except ImportError:
             if verbose:
@@ -656,7 +659,7 @@ def download_from_manifest(
                                     _next_payload = build_step_payload_from_sample(_next_proxy) if _next_proxy else None
                                     _route_meta = {"total_distance_m": route.total_distance_m, "total_duration_s": route.total_duration_s}
                                     _arrival, _mins, _dist_km = estimate_eta_from_sample(_sample_proxy, _route_meta)
-                                    _scale = overlay_scale_for_map(640, 400)
+                                    _scale = OVERLAY_SCALE
                                     _add_overlay_fn(
                                         map_path,
                                         _step_payload,

@@ -7,7 +7,7 @@ Users can download images using their own Google Maps API key.
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field, model_validator
 from navbuddy.polylines import pose_from_polyline
@@ -439,8 +439,11 @@ def estimate_download_from_manifest(
     manifest = DatasetManifest(**manifest_data)
 
     frames_dir = output_dir / "frames"
+    maps_dir = output_dir / "maps"
     total_targets = 0
     existing = 0
+    map_total = 0
+    map_existing = 0
 
     for route in manifest.routes:
         for step in route.steps:
@@ -456,9 +459,15 @@ def estimate_download_from_manifest(
             for frame in step_frames:
                 if (frames_dir / frame.filename).exists():
                     existing += 1
+            # One map per step (free OSM render, separate accounting).
+            map_total += 1
+            map_filename = f"{route.route_id}_step{step.step_index:03d}_map.png"
+            if (maps_dir / map_filename).exists():
+                map_existing += 1
 
     to_download = max(0, total_targets - existing)
     estimated_requests = min(to_download, int(limit)) if limit is not None else to_download
+    maps_to_render = max(0, map_total - map_existing)
 
     return {
         "routes": len(manifest.routes),
@@ -467,6 +476,9 @@ def estimate_download_from_manifest(
         "existing": existing,
         "to_download": to_download,
         "estimated_requests": estimated_requests,
+        "map_total": map_total,
+        "map_existing": map_existing,
+        "maps_to_render": maps_to_render,
     }
 
 
@@ -482,20 +494,39 @@ def download_from_manifest(
     render_maps: bool = False,
     car_icon: Optional[str] = None,
     verbose: bool = True,
+    max_workers_frames: int = 16,
+    max_workers_maps: int = 4,
 ) -> Dict[str, int]:
     """Download images from a manifest using Google Street View API.
+
+    Phases:
+      A. Parallel frame downloads (max_workers_frames threads) — the paid,
+         critical artifact; runs first so a mid-job kill leaves you with the
+         expensive part on disk.
+      B. Parallel map renders (max_workers_maps threads) — free, derivative;
+         recoverable later via `navbuddy generate-maps`.
+      C. Sequential overlay + samples.jsonl + route metadata writes (fast).
+
+    Both phases skip files that already exist on disk, so re-running picks
+    up exactly where a previous run left off.
 
     Args:
         manifest_file: Path to manifest JSON
         output_dir: Where to save images
         api_key: Google Maps API key
-        limit: Max frames to download
-        verbose: Print progress
+        limit: Max frames to download (applies only to Phase A)
+        max_workers_frames: Parallel Street View downloads (default 16; under
+            Google's QPS limit even at ~5 routes/sec; raise if you have a
+            higher-tier API key).
+        max_workers_maps: Parallel chromium browsers (default 4; each ~150MB
+            RAM. Raise if you have memory headroom, lower on small VMs).
+        verbose: Print per-frame progress
 
     Returns:
         Dict with download stats
     """
     import urllib.request
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     from navbuddy.config import CAR_ICON, MAP_WIDTH, MAP_HEIGHT, OVERLAY_SCALE
 
     if car_icon is None:
@@ -575,6 +606,120 @@ def download_from_manifest(
                 print("  [warning] map rendering unavailable — run: pip install navbuddy[render] && playwright install chromium")
             _render_map_fn = None
 
+    # ─── PHASE A: parallel frame downloads ─────────────────────────────────
+    # Build task list first so we can count + apply --limit deterministically.
+    frame_tasks: List[Tuple[ManifestFrame, ManifestStep, Path]] = []
+    skipped = 0
+    for route in manifest.routes:
+        for step in route.steps:
+            for frame in route_step_frames[route.route_id].get(int(step.step_index), []):
+                output_path = frames_dir / frame.filename
+                if output_path.exists():
+                    skipped += 1
+                    continue
+                frame_tasks.append((frame, step, output_path))
+
+    if limit is not None and len(frame_tasks) > limit:
+        frame_tasks = frame_tasks[:limit]
+
+    def _download_one_frame(task):
+        frame, step, output_path = task
+        lat, lng, heading = frame.lat, frame.lng, frame.heading
+        pitch = frame.pitch if frame.pitch is not None else 0
+        fov = frame.fov if frame.fov is not None else 90
+        size = frame.size or "640x400"
+        if lat is None or lng is None or heading is None:
+            point = pose_from_polyline(step.polyline, float(frame.remaining_m))
+            if point is not None:
+                lat, lng, heading = point
+        if lat is None or lng is None:
+            lat, lng = step.start_lat, step.start_lng
+        if heading is None:
+            heading = step.heading or 0
+        # Prefer pano_id for exact panorama reproducibility when present.
+        if frame.pano_id:
+            url = (f"https://maps.googleapis.com/maps/api/streetview"
+                   f"?size={size}&pano={frame.pano_id}"
+                   f"&heading={heading}&pitch={pitch}&fov={fov}&key={api_key}")
+        else:
+            url = (f"https://maps.googleapis.com/maps/api/streetview"
+                   f"?size={size}&location={lat},{lng}"
+                   f"&heading={heading}&pitch={pitch}&fov={fov}&key={api_key}")
+        try:
+            urllib.request.urlretrieve(url, output_path)
+            return frame.filename, True, None
+        except Exception as e:
+            return frame.filename, False, str(e)[:120]
+
+    downloaded = 0
+    failed = 0
+    if frame_tasks:
+        if verbose:
+            print(f"\nPhase A: downloading {len(frame_tasks)} frames ({max_workers_frames} workers)...")
+        with ThreadPoolExecutor(max_workers=max_workers_frames) as ex:
+            for i, (filename, ok, err) in enumerate(ex.map(_download_one_frame, frame_tasks), 1):
+                if ok:
+                    downloaded += 1
+                else:
+                    failed += 1
+                    if verbose:
+                        print(f"  ✗ {filename}: {err}")
+                if verbose and i % 500 == 0:
+                    print(f"  frames: {i}/{len(frame_tasks)}  ok={downloaded}  fail={failed}")
+        if verbose:
+            print(f"Phase A done: downloaded={downloaded} failed={failed} skipped={skipped}")
+
+    # ─── PHASE B: parallel map renders ─────────────────────────────────────
+    # Each chromium browser is ~150 MB; default 4 workers keeps RAM modest.
+    if _render_map_fn is not None:
+        map_tasks: List[Tuple[ManifestRoute, ManifestStep, Path]] = []
+        for route in manifest.routes:
+            for step in route.steps:
+                map_filename = f"{route.route_id}_step{step.step_index:03d}_map.png"
+                map_path = maps_dir / map_filename
+                if not map_path.exists():
+                    map_tasks.append((route, step, map_path))
+
+        def _render_one_map(task):
+            _route, step, map_path = task
+            try:
+                coords = _decode_polyline(step.polyline)
+                ok = _render_map_fn(
+                    step_polyline_coords=coords,
+                    car_lat=step.start_lat,
+                    car_lng=step.start_lng,
+                    heading=step.heading or 0.0,
+                    start_lat=step.start_lat,
+                    start_lng=step.start_lng,
+                    end_lat=step.end_lat,
+                    end_lng=step.end_lng,
+                    output_path=map_path,
+                    car_icon=car_icon,
+                )
+                return map_path.name, bool(ok), None
+            except Exception as e:
+                return map_path.name, False, str(e)[:120]
+
+        if map_tasks:
+            if verbose:
+                print(f"\nPhase B: rendering {len(map_tasks)} maps ({max_workers_maps} workers)...")
+            with ThreadPoolExecutor(max_workers=max_workers_maps) as ex:
+                map_done = 0
+                map_fail = 0
+                for i, (mname, ok, err) in enumerate(ex.map(_render_one_map, map_tasks), 1):
+                    if ok:
+                        map_done += 1
+                    else:
+                        map_fail += 1
+                        if verbose and err:
+                            print(f"  [map] failed {mname}: {err}")
+                    if verbose and i % 200 == 0:
+                        print(f"  maps: {i}/{len(map_tasks)}  ok={map_done}  fail={map_fail}")
+            if verbose:
+                print(f"Phase B done: rendered={map_done} failed={map_fail}")
+
+    # ─── PHASE C: sequential overlay + samples.jsonl + route metadata ──────
+    # Fast in-process work; kept sequential because samples.jsonl is one file.
     with open(samples_path, "w", encoding="utf-8") as samples_f:
         for route in manifest.routes:
             route_dir = routes_dir / route.route_id
@@ -614,69 +759,43 @@ def download_from_manifest(
                 frames = route_step_frames[route.route_id].get(int(step.step_index), [])
                 frame_paths = [f"frames/{frame.filename}" for frame in frames]
 
-                # Render OSM overhead map if requested
                 map_rel: Optional[str] = None
                 map_filename = f"{route.route_id}_step{step.step_index:03d}_map.png"
                 map_path = maps_dir / map_filename
-                if _render_map_fn is not None and not map_path.exists():
-                    try:
-                        coords = _decode_polyline(step.polyline)
-                        ok = _render_map_fn(
-                            step_polyline_coords=coords,
-                            car_lat=step.start_lat,
-                            car_lng=step.start_lng,
-                            heading=step.heading or 0.0,
-                            start_lat=step.start_lat,
-                            start_lng=step.start_lng,
-                            end_lat=step.end_lat,
-                            end_lng=step.end_lng,
-                            output_path=map_path,
-                            car_icon=car_icon,
-                        )
-                        if ok:
-                            if verbose:
-                                print(f"  [map] {map_filename}")
-                            # Apply navigation overlay (nav card + ETA) if available
-                            if _add_overlay_fn is not None:
-                                try:
-                                    remaining_m = remaining_per_step[idx]
-                                    # Build a minimal sample-like dict for the helpers
-                                    _sample_proxy = {
-                                        "prior": {"instruction": step.instruction},
-                                        "maneuver": step.maneuver,
-                                        "distances": {
-                                            "step_distance_m": step.distance_m,
-                                            "remaining_distance_m": remaining_m,
-                                        },
-                                    }
-                                    _next_step = route.steps[idx + 1] if idx + 1 < len(route.steps) else None
-                                    _next_proxy = {
-                                        "prior": {"instruction": _next_step.instruction},
-                                        "maneuver": _next_step.maneuver,
-                                        "distances": {"step_distance_m": _next_step.distance_m, "remaining_distance_m": 0},
-                                    } if _next_step else None
-                                    _step_payload = build_step_payload_from_sample(_sample_proxy)
-                                    _next_payload = build_step_payload_from_sample(_next_proxy) if _next_proxy else None
-                                    _route_meta = {"total_distance_m": route.total_distance_m, "total_duration_s": route.total_duration_s}
-                                    _arrival, _mins, _dist_km = estimate_eta_from_sample(_sample_proxy, _route_meta)
-                                    _scale = OVERLAY_SCALE
-                                    _add_overlay_fn(
-                                        map_path,
-                                        _step_payload,
-                                        _next_payload,
-                                        arrival_time=_arrival,
-                                        minutes_remaining=_mins,
-                                        distance_km=_dist_km,
-                                        overlay_scale=_scale,
-                                    )
-                                except Exception as oe:
-                                    if verbose:
-                                        print(f"  [map] overlay failed {map_filename}: {oe}")
-                    except Exception as e:
-                        if verbose:
-                            print(f"  [map] failed {map_filename}: {e}")
                 if map_path.exists():
                     map_rel = f"maps/{map_filename}"
+                    # Apply nav-card + ETA overlay if available.
+                    if _add_overlay_fn is not None:
+                        try:
+                            remaining_m = remaining_per_step[idx]
+                            _sample_proxy = {
+                                "prior": {"instruction": step.instruction},
+                                "maneuver": step.maneuver,
+                                "distances": {
+                                    "step_distance_m": step.distance_m,
+                                    "remaining_distance_m": remaining_m,
+                                },
+                            }
+                            _next_step = route.steps[idx + 1] if idx + 1 < len(route.steps) else None
+                            _next_proxy = {
+                                "prior": {"instruction": _next_step.instruction},
+                                "maneuver": _next_step.maneuver,
+                                "distances": {"step_distance_m": _next_step.distance_m, "remaining_distance_m": 0},
+                            } if _next_step else None
+                            _step_payload = build_step_payload_from_sample(_sample_proxy)
+                            _next_payload = build_step_payload_from_sample(_next_proxy) if _next_proxy else None
+                            _route_meta = {"total_distance_m": route.total_distance_m, "total_duration_s": route.total_duration_s}
+                            _arrival, _mins, _dist_km = estimate_eta_from_sample(_sample_proxy, _route_meta)
+                            _add_overlay_fn(
+                                map_path, _step_payload, _next_payload,
+                                arrival_time=_arrival,
+                                minutes_remaining=_mins,
+                                distance_km=_dist_km,
+                                overlay_scale=OVERLAY_SCALE,
+                            )
+                        except Exception as oe:
+                            if verbose:
+                                print(f"  [overlay] {map_filename}: {oe}")
 
                 sample = {
                     "id": sample_id,
@@ -712,7 +831,7 @@ def download_from_manifest(
                 samples_f.write(json.dumps(sample) + "\n")
                 samples_written += 1
 
-    # Write embedded GT labels if present
+    # Write embedded GT labels if present.
     if manifest.gt_labels:
         labels_path = output_dir / "labels.jsonl"
         with open(labels_path, "w", encoding="utf-8") as lf:
@@ -720,75 +839,6 @@ def download_from_manifest(
                 lf.write(json.dumps({"sample_id": sid, **lbl}) + "\n")
         if verbose:
             print(f"\nLabels written: {labels_path} ({len(manifest.gt_labels)} entries)")
-
-    # Download frames
-    downloaded = 0
-    skipped = 0
-    failed = 0
-
-    for route in manifest.routes:
-        if verbose:
-            print(f"\nRoute: {route.route_id}")
-
-        for step in route.steps:
-            frames = route_step_frames[route.route_id].get(int(step.step_index), [])
-            for frame in frames:
-                if limit and downloaded >= limit:
-                    break
-
-                output_path = frames_dir / frame.filename
-
-                # Skip if already exists
-                if output_path.exists():
-                    skipped += 1
-                    continue
-
-                # Build Street View URL
-                # Prefer exact per-frame geometry when provided.
-                lat = frame.lat
-                lng = frame.lng
-                heading = frame.heading
-                pitch = frame.pitch if frame.pitch is not None else 0
-                fov = frame.fov if frame.fov is not None else 90
-                size = frame.size or "640x400"
-
-                # Backward-compatible fallback: reconstruct from step polyline + remaining distance.
-                if lat is None or lng is None or heading is None:
-                    point = pose_from_polyline(step.polyline, float(frame.remaining_m))
-                    if point is not None:
-                        lat, lng, heading = point
-
-                # Last resort fallback for legacy manifests with no geometry info.
-                if lat is None or lng is None:
-                    lat = step.start_lat
-                    lng = step.start_lng
-                if heading is None:
-                    heading = step.heading or 0
-
-                url = (
-                    f"https://maps.googleapis.com/maps/api/streetview"
-                    f"?size={size}"
-                    f"&location={lat},{lng}"
-                    f"&heading={heading}"
-                    f"&pitch={pitch}"
-                    f"&fov={fov}"
-                    f"&key={api_key}"
-                )
-
-                try:
-                    urllib.request.urlretrieve(url, output_path)
-                    downloaded += 1
-                    if verbose:
-                        print(f"  ✓ {frame.filename}")
-                except Exception as e:
-                    failed += 1
-                    if verbose:
-                        print(f"  ✗ {frame.filename}: {e}")
-
-            if limit and downloaded >= limit:
-                break
-        if limit and downloaded >= limit:
-            break
 
     maps_rendered = sum(
         1 for route in manifest.routes for step in route.steps

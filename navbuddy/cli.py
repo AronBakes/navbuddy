@@ -844,6 +844,16 @@ def download_manifest(
         "--car-icon",
         help="Car marker on overhead maps: arrow, sedan, cybertruck, f1, model3, wrx (default from config/osm_map.yaml)",
     ),
+    workers_frames: int = typer.Option(
+        16,
+        "--workers-frames",
+        help="Parallel Street View download threads (default 16; raise for higher-tier API keys)",
+    ),
+    workers_maps: int = typer.Option(
+        4,
+        "--workers-maps",
+        help="Parallel chromium browsers for map render (default 4; each ~150MB RAM)",
+    ),
 ):
     """Download images from a manifest file.
 
@@ -925,12 +935,14 @@ def download_manifest(
     console.print("[bold]Cost Estimate[/bold]")
     console.print(f"  Routes: {estimate['routes']}")
     console.print(f"  Steps: {estimate['steps']}")
-    console.print(f"  Target frames: {estimate['total_targets']}")
-    console.print(f"  Existing files: {estimate['existing']}")
-    console.print(f"  To download: {estimate['to_download']}")
+    console.print(f"  Frames (paid):  total={estimate['total_targets']}  "
+                  f"cached={estimate['existing']}  to-download={estimate['to_download']}")
+    console.print(f"  Maps (free):    total={estimate.get('map_total', 0)}  "
+                  f"cached={estimate.get('map_existing', 0)}  "
+                  f"to-render={estimate.get('maps_to_render', 0)}")
     console.print(
-        f"  Estimated requests: {estimated_requests} "
-        f"(~${estimated_cost_usd:.2f} at ${cost_per_1000:.2f}/1k)"
+        f"  Estimated cost: ${estimated_cost_usd:.2f} "
+        f"({estimated_requests} requests @ ${cost_per_1000:.2f}/1k)"
     )
     console.print()
 
@@ -953,6 +965,8 @@ def download_manifest(
             render_maps=render_maps,
             car_icon=car_icon,
             verbose=True,
+            max_workers_frames=workers_frames,
+            max_workers_maps=workers_maps,
         )
 
         console.print()

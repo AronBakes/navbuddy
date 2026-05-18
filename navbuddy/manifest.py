@@ -590,6 +590,7 @@ def download_from_manifest(
     # Optionally import map renderer (requires playwright)
     _render_map_fn = None
     _add_overlay_fn = None
+    _OverlaySession = None
     if render_maps:
         try:
             from navbuddy.map_renderer_osm import render_map as _render_map_fn, HAS_PLAYWRIGHT  # type: ignore
@@ -597,6 +598,7 @@ def download_from_manifest(
                 raise ImportError("playwright not available")
             from navbuddy.polylines import decode_polyline as _decode_polyline
             from navbuddy.overlays import (  # type: ignore
+                OverlaySession as _OverlaySession,
                 add_overlay_to_map as _add_overlay_fn,
                 estimate_eta_from_sample,
                 build_step_payload_from_sample,
@@ -720,7 +722,14 @@ def download_from_manifest(
 
     # ─── PHASE C: sequential overlay + samples.jsonl + route metadata ──────
     # Fast in-process work; kept sequential because samples.jsonl is one file.
-    with open(samples_path, "w", encoding="utf-8") as samples_f:
+    # Open ONE persistent chromium browser for the entire overlay pass.
+    # Without this, each `_add_overlay_fn` call spawned its own chromium —
+    # at ~10k+ calls per manifest, accumulated memory pressure produced
+    # intermittent SIGSEGV crashes (signal 11 from libc) that silently lost
+    # overlays.
+    from contextlib import nullcontext
+    _overlay_cm = _OverlaySession() if _OverlaySession is not None else nullcontext()
+    with _overlay_cm as _overlay_session, open(samples_path, "w", encoding="utf-8") as samples_f:
         for route in manifest.routes:
             route_dir = routes_dir / route.route_id
             route_dir.mkdir(parents=True, exist_ok=True)
@@ -792,10 +801,13 @@ def download_from_manifest(
                                 minutes_remaining=_mins,
                                 distance_km=_dist_km,
                                 overlay_scale=OVERLAY_SCALE,
+                                session=_overlay_session,
                             )
                         except Exception as oe:
                             if verbose:
-                                print(f"  [overlay] {map_filename}: {oe}")
+                                # Single short line per failure; missing
+                                # overlays don't break the dataset.
+                                print(f"  [overlay] {map_filename}: {str(oe).splitlines()[0]}")
 
                 sample = {
                     "id": sample_id,

@@ -477,6 +477,12 @@ async def render_map_async(
             render_map_async._warned = True
         return False
 
+    # If a prior call already failed at browser launch (e.g. chromium binary
+    # missing), short-circuit silently — repeating the multi-line install
+    # banner once per step spams the terminal for thousands of frames.
+    if getattr(render_map_async, "_launch_failed", False):
+        return False
+
     # Load car icon if custom
     car_icon_data_uri = None
     car_icon_width = 48  # default for arrow
@@ -560,12 +566,22 @@ async def render_map_async(
 
     except Exception as e:
         err_str = str(e)
-        if "Executable doesn't exist" in err_str or "BrowserType" in err_str:
-            if not getattr(render_map_async, '_playwright_warned', False):
-                print("Map rendering requires Playwright chromium. Run: playwright install chromium")
-                render_map_async._playwright_warned = True
+        # The "binary missing" case is specifically the substring
+        # "Executable doesn't exist" — that's a permanent condition, so we
+        # arm the silent-skip gate. EVERY other BrowserType error (timeout,
+        # OOM-killed subprocess, transient resource exhaustion under high
+        # parallelism) is recoverable on the next call, so do not gate.
+        if "Executable doesn't exist" in err_str:
+            if not getattr(render_map_async, "_launch_failed", False):
+                render_map_async._launch_failed = True
+                print(
+                    "Map render disabled: Chromium binary not found. "
+                    "Run `playwright install chromium` to enable. "
+                    "Continuing without maps."
+                )
         else:
-            print(f"Map render failed: {e}")
+            # Transient — print one short line per failure (caller may retry).
+            print(f"Map render failed: {err_str.splitlines()[0]}")
         return False
     finally:
         # Clean up temp file

@@ -30,6 +30,83 @@ except ImportError:
 
 from navbuddy.config import OVERLAY_SCALE, OVERLAY_DEVICE_SCALE
 
+
+class OverlaySession:
+    """Persistent Playwright chromium browser for batch overlay rendering.
+
+    Each `add_overlay_to_map` / `overlay_nav_eta_html` call without a session
+    spawns + tears down a fresh chromium browser, costing ~500ms-5s each.
+    Worse, doing this ~10k+ times in one Python process accumulates memory
+    pressure that triggers intermittent SIGSEGV crashes inside the chromium
+    binary (observed in a 13.5k-map batch).
+
+    Pass a single OverlaySession to all overlay calls in a batch to share
+    one chromium across them — eliminating both the latency and the crashes.
+
+    Usage:
+        with OverlaySession() as sess:
+            for map_path, step in tasks:
+                add_overlay_to_map(map_path, step, ..., session=sess)
+
+    Backwards-compat: session=None falls back to the per-call browser.
+    """
+
+    def __init__(self):
+        self._pw_ctx = None
+        self._pw = None
+        self._browser = None
+
+    def __enter__(self):
+        if not HAS_PLAYWRIGHT:
+            raise RuntimeError(
+                "Playwright is required. Run: pip install playwright && playwright install chromium"
+            )
+        self._pw_ctx = sync_playwright()
+        self._pw = self._pw_ctx.__enter__()
+        self._browser = self._pw.chromium.launch(headless=True)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            if self._browser is not None:
+                try:
+                    self._browser.close()
+                except Exception:
+                    pass
+        finally:
+            if self._pw_ctx is not None:
+                self._pw_ctx.__exit__(exc_type, exc_val, exc_tb)
+            self._browser = None
+            self._pw = None
+            self._pw_ctx = None
+
+    def render_html_to_image(
+        self,
+        html: str,
+        width: int,
+        height: int,
+        output_path,
+        device_scale_factor: int = 2,
+        selector: str = "#wrap",
+    ):
+        page = self._browser.new_page(
+            viewport={"width": width, "height": height},
+            device_scale_factor=device_scale_factor,
+        )
+        try:
+            page.set_content(html)
+            page.evaluate(
+                "(document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve()"
+            )
+            page.wait_for_timeout(300)
+            element = page.locator(selector)
+            element.screenshot(path=str(output_path), type="png")
+        finally:
+            try:
+                page.close()
+            except Exception:
+                pass
+
 # Instruction truncation limits (different rendering contexts have different widths)
 PIL_MAX_INSTR_LEN = 180       # PIL text rendering — wider canvas, smaller font
 PIL_MAX_SECONDARY_LEN = 160   # PIL secondary instruction line
@@ -455,6 +532,7 @@ def overlay_nav_eta_html(
     pad: int = 16,
     device_scale_factor: int = OVERLAY_DEVICE_SCALE,
     overlay_scale: float = 1.0,
+    session: Optional["OverlaySession"] = None,
 ) -> Path:
     """Compose nav and ETA cards onto image using Playwright + HTML.
 
@@ -518,15 +596,29 @@ def overlay_nav_eta_html(
 """
 
     output = Path(out_path or image_path)
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": w, "height": h}, device_scale_factor=device_scale_factor)
-        page.set_content(html, wait_until="networkidle")
-        page.evaluate("(document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve()")
-        page.wait_for_timeout(500)
-        element = page.locator("#wrap")
-        element.screenshot(path=str(output), type="png")
-        browser.close()
+
+    if session is not None:
+        # Persistent-browser path (preferred for batch jobs — avoids the
+        # accumulated-memory SIGSEGV we hit when spawning chromium ~10k+
+        # times in one Python process).
+        session.render_html_to_image(html, w, h, output, device_scale_factor=device_scale_factor)
+    else:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            try:
+                page = browser.new_page(
+                    viewport={"width": w, "height": h},
+                    device_scale_factor=device_scale_factor,
+                )
+                page.set_content(html, wait_until="networkidle")
+                page.evaluate(
+                    "(document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve()"
+                )
+                page.wait_for_timeout(500)
+                element = page.locator("#wrap")
+                element.screenshot(path=str(output), type="png")
+            finally:
+                browser.close()
 
     return output
 
@@ -543,21 +635,16 @@ def add_overlay_to_map(
     use_playwright: bool = True,
     overlay_scale: float = 1.0,
     device_scale_factor: int = OVERLAY_DEVICE_SCALE,
+    session: Optional["OverlaySession"] = None,
 ) -> Path:
     """Add navigation overlay to a map image.
 
     Convenience function that picks the best renderer available.
 
-    Args:
-        map_path: Path to map image
-        step: Current step dict
-        next_step: Optional next step
-        arrival_time: ETA arrival time string
-        minutes_remaining: Minutes until arrival
-        distance_km: Distance remaining in km
-        out_path: Output path (default: overwrite input)
-        use_playwright: Use Playwright for high-quality HTML rendering
-        overlay_scale: Scale factor for overlay elements (1.0 = default, 1.2 = 20% larger)
+    Pass `session=<OverlaySession>` to reuse a persistent chromium across
+    many calls — required for batch jobs (10k+ overlays in one process).
+    Without it, each call spawns + tears down a fresh chromium, which
+    accumulates memory pressure and triggers SIGSEGV crashes on large batches.
 
     Returns:
         Path to output image with overlay
@@ -571,6 +658,7 @@ def add_overlay_to_map(
             out_path=out_path,
             overlay_scale=overlay_scale,
             device_scale_factor=device_scale_factor,
+            session=session,
         )
     else:
         return overlay_nav_eta_pil(

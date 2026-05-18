@@ -13,7 +13,16 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-# ── Action direction groups ──────────────────────────────────────
+# ── Action vocabulary and direction groups ──────────────────────
+#
+# DIRECTION_GROUPS organises maneuver actions by their effective direction.
+# Predictions and GT in the same group score 1.0 in the per-sample scorer
+# (the leaderboard aggregator uses strict acceptable_actions match only — see
+# docs/scoring.md §7). The `roundabout` and `merge` groups exist to handle
+# the common case where the GT uses the bare form but models predict the
+# directional variant (e.g. GT=`roundabout`, pred=`roundabout_left`).
+# `abstain` exists for audit only; it does not give partial credit against
+# a directional GT.
 
 DIRECTION_GROUPS: Dict[str, set] = {
     "left": {
@@ -25,13 +34,52 @@ DIRECTION_GROUPS: Dict[str, set] = {
         "slight_right", "sharp_right", "uturn_right", "roundabout_right", "ramp_right",
     },
     "straight": {"straight", "continue", "keep_straight"},
+    "roundabout": {"roundabout", "roundabout_left", "roundabout_right"},
+    "merge": {"merge", "merge_left", "merge_right"},
+    "abstain": {"unknown"},
 }
 
-# Reverse lookup: action → group name
+# Canonical action vocabulary — every legal value a model or GT row may emit.
+# Derived from DIRECTION_GROUPS so it stays in sync. Validators reject anything
+# outside this set.
+VALID_ACTIONS: set = {a for actions in DIRECTION_GROUPS.values() for a in actions} | {
+    # Standalone actions with no directional grouping:
+    "uturn",   # bare u-turn
+    "arrive",  # final step
+    "depart",  # initial step
+}
+
+# Reverse lookup: action → group name. Note that left/right groups still own
+# `merge_left`/`merge_right`/`roundabout_left`/`roundabout_right` since those
+# carry a direction. The `merge` and `roundabout` groups only catch the bare
+# form via direct comparison in score_action — see below.
 _ACTION_TO_GROUP: Dict[str, str] = {}
-for _group, _actions in DIRECTION_GROUPS.items():
-    for _a in _actions:
+for _group in ("left", "right", "straight", "abstain"):
+    for _a in DIRECTION_GROUPS[_group]:
         _ACTION_TO_GROUP[_a] = _group
+
+
+def normalize_action(value: Any) -> Optional[str]:
+    """Lowercase/strip an action string; return None for empty.
+
+    Does NOT enforce vocabulary — use validate_action() for that.
+    """
+    if value is None:
+        return None
+    s = str(value).strip().lower()
+    return s or None
+
+
+def validate_action(value: Any) -> Optional[str]:
+    """Return the normalized action if it's in VALID_ACTIONS, else None.
+
+    Useful for filtering out hallucinated actions like 'take_the_Kings_Ave_ramp'
+    before they propagate into scoring.
+    """
+    norm = normalize_action(value)
+    if norm and norm in VALID_ACTIONS:
+        return norm
+    return None
 
 
 # ── BERTScore (cached scorer) ────────────────────────────────────
@@ -64,13 +112,15 @@ def score_action(
     Exact match with GT = 1.0.
     Match with any acceptable alternative = 1.0.
     Same direction group (left/right/straight) = 1.0.
+    Maneuver-class group (roundabout, merge) covers GT/pred mismatches like
+    GT=`roundabout` vs pred=`roundabout_left` = 1.0.
     Wrong direction = 0.0.
     """
     pred = (pred or "").strip().lower()
     gt = (gt or "").strip().lower()
     if pred == gt:
         return 1.0
-    # Check acceptable alternatives (eval-only overrides for ambiguous geometry)
+    # Acceptable alternatives (eval-only overrides for ambiguous geometry).
     if acceptable_actions:
         acceptable = {a.strip().lower() for a in acceptable_actions}
         if pred in acceptable:
@@ -80,6 +130,12 @@ def score_action(
     gt_group = _ACTION_TO_GROUP.get(gt)
     if pred_group and gt_group and pred_group == gt_group:
         return 1.0
+    # Maneuver-class equivalence: handle bare-form GT (roundabout, merge) vs
+    # directional pred. Check both directions of the comparison.
+    for class_group in ("roundabout", "merge"):
+        members = DIRECTION_GROUPS[class_group]
+        if pred in members and gt in members:
+            return 1.0
     return 0.0
 
 

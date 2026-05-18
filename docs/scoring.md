@@ -1,8 +1,22 @@
 # NavBuddy Evaluation Scoring
 
 Reference documentation for how NavBuddy scores model predictions against
-ground-truth (GT) labels.  All scoring logic lives in
-`navbuddy/eval/metric_eval.py`.
+ground-truth (GT) labels.
+
+There are **two distinct scoring layers**, and they do not agree on every metric:
+
+1. **Per-sample scorer** (`navbuddy/eval/metric_eval.py`) — used by tools that need
+   a 0-1 score per `(sample, model, modality)`, e.g. building leaderboards in
+   ad-hoc notebooks, exporting per-sample diffs to the dashboard. Lenient where
+   it can be (direction groups, partial credit on lanes).
+2. **Leaderboard aggregator** (`scripts/build_eval_json.py`) — generates
+   `data/eval.json` consumed by the public leaderboard on the GitHub Pages site.
+   Stricter (no direction group fallback, lanes uses MAE).
+
+Sections 1–5 describe the **per-sample scorer**. Section 6 describes how
+duplicates are handled. Section 7 describes the **leaderboard aggregator** and
+where its metrics differ from the per-sample scorer — this is the authoritative
+description for what `eval.json` and the published leaderboard actually contain.
 
 ---
 
@@ -83,31 +97,70 @@ Formula: `max(0, 1 - abs(pred - gt) / 4)`
 
 ---
 
-## 6. Handling Duplicates
+## 6. Handling Duplicates (per-sample scorer)
 
-A model may produce multiple result entries per sample (e.g., different prompt
-versions, modalities, or retries). NavBuddy handles this differently depending
-on the metric type:
+A model may produce multiple result entries per `(sample, modality)` — for
+example, the matrix runner generates 5 image-prior rows per sample (clean +
+fog + rain + night + motion_blur, all tagged as `modality = "image + prior"`
+with the augmentation in a separate `augment` field). The per-sample scorer
+treats every row independently. Callers are responsible for filtering by
+`augment` if they want a clean-only view.
 
-**Binary metrics (lane change F1):** Majority vote across entries for each
-sample. The sample contributes a single prediction — whichever value appears
-most often. This ensures each sample is weighted equally (weight = 1)
-regardless of how many entries it has.
-
-**Accuracy metrics (next action, lane count MAE):** Per-sample scores are
-computed first by averaging all entries within each sample, then averaged across
-samples. This gives each navigation scenario equal weight in the final score,
-even if some samples have more inference runs than others.
+For the leaderboard aggregator's duplicate handling, see section 7.
 
 ---
 
-## 7. Metric Choices
+## 7. Leaderboard Aggregator (`scripts/build_eval_json.py`)
+
+Reads `data/results/*.jsonl`, aggregates into per-`(model, modality)` rows,
+writes `data/eval.json`. This is what the github.io leaderboard renders.
+
+### Per-sample aggregation (within each `(model, modality, sample)` bucket)
+
+The matrix runner produces multiple rows per sample for the same `modality`
+(one clean run + one per augmentation). The aggregator collapses them per
+sample as follows:
+
+| Field | Collapse rule |
+|-------|---------------|
+| `next_action` | **Majority vote** (most frequent action string) |
+| `lane_change_required` | **Majority vote** (boolean) |
+| `lanes_count` | **Mean rounded to nearest int** |
+
+Each sample then contributes one prediction to the final metric.
+
+### Final metrics (across samples)
+
+| Output key | Metric | Definition |
+|------------|--------|------------|
+| `{mod}_act` | **Next action accuracy** | Fraction of samples where the majority-vote prediction is in `gt.acceptable_actions`. **No direction-group fallback** — strict match only. Range: 0–1, higher is better. |
+| `{mod}_lc`  | **Lane change F1** | Treats "lane change required = true" as the positive class. Builds TP/FP/TN/FN from majority-vote predictions vs GT, computes `2 · P · R / (P + R)`. Samples with `gt.lane_change_required = null` are excluded. Range: 0–1, higher is better. |
+| `{mod}_ln`  | **Lanes count MAE** | Arithmetic mean of `\|round(mean(predictions)) − gt_lanes\|` across samples. **Lower is better; 0 = exact.** This is mean absolute error, *not* the partial-credit scheme used by `score_lanes_count`. |
+| `{mod}_len` | Mean response word count (information only, not a quality metric) |
+
+Modality keys: `ip` = `image + prior`, `vp` = `video + prior`, `p` = `prior`, `ap` = `augment + prior`.
+
+### Differences vs. the per-sample scorer
+
+| Metric | `metric_eval.py` (per-sample) | `build_eval_json.py` (leaderboard) |
+|--------|-------------------------------|-------------------------------------|
+| Action | exact OR acceptable OR same direction group → 1.0; else 0.0 | exact OR acceptable → 1.0; else 0.0. **No direction-group fallback.** |
+| Lane change | per-sample 0/1 match, then mean = accuracy | per-sample majority vote, then **F1 across samples** |
+| Lanes count | partial credit `max(0, 1 − \|err\|/4)` | **MAE** (raw absolute error) |
+
+If you want to reproduce the leaderboard exactly, use `build_eval_json.py`.
+If you want lenient per-sample scoring (e.g., to debug a single model on a
+single sample), use `metric_eval.score_result`.
+
+---
+
+## 8. Metric Choices (rationale)
 
 | Metric | What it measures | Why we use it |
 |--------|-----------------|---------------|
-| **Direction accuracy** | Did the model predict the correct direction (left/right/straight)? | The core navigation task — a wrong direction is a wrong turn. Direction groups absorb specificity differences (e.g., `fork_left` vs `turn_left`) that don't affect the driver's decision. |
-| **Lane change F1** | Did the model correctly identify whether a lane change is needed? | Lane changes are safety-critical. F1 balances false positives (unnecessary lane changes) and false negatives (missed lane changes). |
-| **Lane count MAE** | How far off is the predicted lane count from ground truth? | Lane awareness matters for lane-change decisions. MAE is more informative than binary exact-match — being off by 1 is less wrong than being off by 3. |
+| **Next action accuracy** (strict) | Did the model produce an action that matches GT or a GT-approved alternative? | Strict accuracy keeps the metric interpretable. `acceptable_actions` already handles the genuinely ambiguous cases (≈17% of GT samples); direction-group fallback would give partial credit for wrong-but-same-side answers, which we decided is not what the leaderboard should reward. |
+| **Lane change F1** | Did the model correctly identify whether a lane change is needed? | The class is imbalanced (≈40% yes / 60% no on labelled GT-100). F1 punishes models that always-say-no in a way that raw accuracy does not. |
+| **Lanes count MAE** | How far off is the predicted lane count from GT? | MAE is more informative than exact-match and more honest than a custom partial-credit scheme. Easy to interpret: 0.4 means models are off by less than half a lane on average. |
 
 ---
 
